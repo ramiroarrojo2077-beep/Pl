@@ -141,28 +141,56 @@
   }
   .log div{white-space:pre-wrap}
 
-  /* cartel QUE FACHA */
-  .facha{
-    position:fixed; inset:0; display:none; place-items:center; z-index:50;
-    background:radial-gradient(circle at 50% 50%,rgba(47,214,165,.22),rgba(8,10,18,.88));
-    backdrop-filter:blur(3px); text-align:center; padding:20px;
+  /* ---------- el lavarropas habla ---------- */
+  .grill{display:flex; gap:3px; align-items:flex-end; height:15px; margin-left:12px}
+  .grill i{width:3px; height:4px; border-radius:2px; background:#aab2c1; transition:background .2s}
+  .talking .grill i{background:var(--accent); animation:eq .42s ease-in-out infinite}
+  .talking .grill i:nth-child(2){animation-delay:.09s}
+  .talking .grill i:nth-child(3){animation-delay:.18s}
+  .talking .grill i:nth-child(4){animation-delay:.05s}
+  .talking .grill i:nth-child(5){animation-delay:.22s}
+  @keyframes eq{0%,100%{height:4px}50%{height:15px}}
+
+  .bubble{
+    position:absolute; left:50%; top:112px; z-index:5;
+    width:min(286px,84%); padding:15px 16px 13px; text-align:center;
+    background:#0e1a16; color:#eafff6; border:1.5px solid var(--accent); border-radius:18px;
+    box-shadow:0 18px 40px rgba(0,0,0,.5), 0 0 0 7px rgba(47,214,165,.12);
+    transform:translateX(-50%) scale(.3); opacity:0; pointer-events:none;
   }
-  .facha.show{display:grid}
-  .facha .card{
-    background:rgba(10,16,26,.78); border:1px solid rgba(47,214,165,.35);
-    border-radius:24px; padding:28px 26px 24px; max-width:560px; margin:0 auto;
-    box-shadow:0 24px 70px rgba(0,0,0,.6);
+  .bubble::before,.bubble::after{content:""; position:absolute; left:50%; border:11px solid transparent}
+  .bubble::before{bottom:-22px; margin-left:-11px; border-top-color:var(--accent)}
+  .bubble::after{bottom:-19px; margin-left:-11px; border-top-color:#0e1a16}
+  .bubble.show{
+    opacity:1; pointer-events:auto;
+    animation:pop .45s cubic-bezier(.2,1.7,.4,1) forwards, wobble 1.4s ease-in-out .45s 3;
   }
-  .facha h2{
-    margin:0; font-size:clamp(40px,12vw,96px); font-weight:900; letter-spacing:-2px; line-height:1;
-    background:linear-gradient(90deg,#fff,#2fd6a5,#1aa8ff,#fff);
+  .bubble strong{
+    display:block; font-size:clamp(26px,7.4vw,36px); font-weight:900; letter-spacing:-1px; line-height:1.05;
+    background:linear-gradient(90deg,#fff,#2fd6a5 45%,#1aa8ff);
     -webkit-background-clip:text; background-clip:text; color:transparent;
-    text-shadow:0 0 40px rgba(47,214,165,.35);
-    animation:pop .5s cubic-bezier(.2,1.7,.4,1), tilt 1.4s ease-in-out .5s infinite;
   }
-  .facha p{margin:12px 0 22px; color:#d6e2f3}
-  @keyframes pop{0%{transform:scale(.3) rotate(-8deg); opacity:0}100%{transform:scale(1) rotate(-3deg); opacity:1}}
-  @keyframes tilt{0%,100%{transform:rotate(-3deg) scale(1)}50%{transform:rotate(3deg) scale(1.04)}}
+  .bubble small{display:block; margin:6px 0 11px; font-size:12px; color:#9ad9c3}
+  .bubble .mini{
+    cursor:pointer; border:1px solid rgba(47,214,165,.5); background:rgba(47,214,165,.14);
+    color:#eafff6; font:600 12px/1 inherit; padding:8px 12px; border-radius:9px;
+  }
+  .bubble .mini:active{transform:translateY(1px)}
+  .bubble .x{
+    position:absolute; top:6px; right:9px; background:none; border:0; cursor:pointer;
+    color:#6f8c83; font-size:17px; line-height:1; padding:2px 4px;
+  }
+  @keyframes pop{
+    0%{transform:translateX(-50%) scale(.3) rotate(-10deg); opacity:0}
+    100%{transform:translateX(-50%) scale(1) rotate(-2deg); opacity:1}
+  }
+  @keyframes wobble{
+    0%,100%{transform:translateX(-50%) scale(1) rotate(-2deg)}
+    50%{transform:translateX(-50%) scale(1.035) rotate(2deg)}
+  }
+  .display.shout .phase{color:#7bffd2; animation:blink .5s steps(1) infinite}
+  @keyframes blink{50%{opacity:.25}}
+
   @media (prefers-reduced-motion:reduce){
     *{animation:none !important; transition:none !important}
   }
@@ -175,6 +203,7 @@
   <div class="machine" id="machine">
     <div class="top">
       <div class="brand">FACHA WASH</div>
+      <div class="grill" title="parlante"><i></i><i></i><i></i><i></i><i></i></div>
       <div class="leds">
         <i class="led" id="ledPower" title="encendido"></i>
         <i class="led" id="ledRun" title="lavando"></i>
@@ -196,6 +225,13 @@
           <div class="bubbles" id="bubbles"></div>
         </div>
       </div>
+    </div>
+
+    <div class="bubble" id="bubble" role="status" aria-live="assertive">
+      <button class="x" id="bubbleX" aria-label="Cerrar">&times;</button>
+      <strong>¡QUÉ FACHA!</strong>
+      <small>Ciclo terminado, la ropa salió impecable.</small>
+      <button class="mini" id="btnRepeat">Repetilo</button>
     </div>
 
     <div class="bar"><i id="barFill"></i></div>
@@ -231,13 +267,6 @@
 
   <div class="log" id="log"></div>
 
-  <div class="facha" id="facha" role="alertdialog" aria-live="assertive">
-    <div class="card">
-      <h2>¡QUÉ FACHA!</h2>
-      <p>Ciclo terminado. La ropa salió impecable.</p>
-      <button class="act" id="btnOk">Listo</button>
-    </div>
-  </div>
 
 <script>
 (() => {
@@ -258,8 +287,9 @@
   const el = {
     machine:$("machine"), phase:$("phase"), time:$("time"), bar:$("barFill"),
     steps:$("steps"), water:$("water"), bubbles:$("bubbles"), clothes:$("clothes"),
-    progs:$("progs"), start:$("btnStart"), cancel:$("btnCancel"), ok:$("btnOk"),
-    facha:$("facha"), log:$("log"), door:$("door"),
+    progs:$("progs"), start:$("btnStart"), cancel:$("btnCancel"),
+    bubble:$("bubble"), bubbleX:$("bubbleX"), repeat:$("btnRepeat"),
+    display:document.querySelector(".display"), log:$("log"), door:$("door"),
     ledPower:$("ledPower"), ledRun:$("ledRun"), ledDoor:$("ledDoor"),
     voice:$("optVoice"), beep:$("optBeep"), prewash:$("optPrewash"),
   };
@@ -347,18 +377,83 @@
     [[660,0],[880,0.18],[1175,0.36],[1568,0.54]].forEach(([f, w]) => beep(f, 0.22, w, "triangle", 0.1));
   }
 
+  // La voz del lavarropas: intenta hablar de verdad y, si el navegador no puede,
+  // lo dice con su propia garganta de electrodoméstico (Web Audio).
+  let talkTimer = null;
+  function talking(on, ms) {
+    clearTimeout(talkTimer);
+    el.machine.classList.toggle("talking", on);
+    if (on && ms) talkTimer = setTimeout(() => el.machine.classList.remove("talking"), ms);
+  }
+
+  function robotVoice() {
+    // "qué fa-cha" a puro oscilador: tres sílabas con barrido de tono.
+    try {
+      const ctx = audio(), t0 = ctx.currentTime + 0.05;
+      const syl = [[300, 420, 0.20, 0.00], [360, 300, 0.22, 0.26], [230, 180, 0.34, 0.52]];
+      syl.forEach(([f1, f2, dur, at]) => {
+        const t = t0 + at;
+        const osc = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(f1, t);
+        osc.frequency.linearRampToValueAtTime(f2, t + dur);
+        lp.type = "lowpass"; lp.frequency.value = 1400; lp.Q.value = 6;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.16, t + 0.03);
+        g.gain.setValueAtTime(0.16, t + dur - 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        osc.connect(lp).connect(g).connect(ctx.destination);
+        osc.start(t); osc.stop(t + dur + 0.02);
+      });
+      // la "ch" de facha: ruido blanco corto
+      const nb = ctx.createBuffer(1, ctx.sampleRate * 0.09, ctx.sampleRate);
+      const d = nb.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+      const src = ctx.createBufferSource(), ng = ctx.createGain(), hp = ctx.createBiquadFilter();
+      src.buffer = nb; hp.type = "highpass"; hp.frequency.value = 2600; ng.gain.value = 0.12;
+      src.connect(hp).connect(ng).connect(ctx.destination);
+      src.start(t0 + 0.5);
+      talking(true, 950);
+      return true;
+    } catch (_) { return false; }
+  }
+
   function say(text) {
-    if (!el.voice.checked || !("speechSynthesis" in window)) return;
+    if (!el.voice.checked) { talking(false); return; }
+    if (!("speechSynthesis" in window)) { robotVoice(); return; }
+    let started = false;
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "es-AR";
       u.rate = 0.95; u.pitch = 1.15;
       const v = speechSynthesis.getVoices().find((x) => /^es/i.test(x.lang));
       if (v) u.voice = v;
+      u.onstart = () => { started = true; talking(true); };
+      u.onend = u.onerror = () => talking(false);
       speechSynthesis.cancel();
       speechSynthesis.speak(u);
-    } catch (_) { /* ignorar */ }
+    } catch (_) { /* sin voz del sistema */ }
+    // Si el navegador no arrancó a hablar, habla la máquina.
+    setTimeout(() => { if (!started) robotVoice(); }, 700);
   }
+
+  function shout() {
+    el.bubble.classList.remove("show");
+    void el.bubble.offsetWidth;          // reinicia la animación del globo
+    el.bubble.classList.add("show");
+    el.display.classList.add("shout");
+    el.phase.textContent = "¡Qué facha!";
+    jingle();
+    setTimeout(() => say("¡Qué facha!"), 650);
+  }
+
+  function hush() {
+    el.bubble.classList.remove("show");
+    el.display.classList.remove("shout");
+    talking(false);
+    if ("speechSynthesis" in window) try { speechSynthesis.cancel(); } catch (_) {}
+  }
+
   if ("speechSynthesis" in window) speechSynthesis.getVoices();
 
   /* ---------- ciclo ---------- */
@@ -432,7 +527,7 @@
     el.cancel.disabled = false;
     el.time.textContent = mmss(total);
     el.bar.style.width = "0%";
-    el.facha.classList.remove("show");
+    hush();
     renderSteps(plan.map((s) => s.name));
     log(`Arranca ciclo ${program.name}: ${total}s (${plan.map((s) => s.name).join(" → ")})`);
     beep(720, 0.12);
@@ -474,7 +569,7 @@
     el.door.classList.remove("spinning", "fast");
     el.ledRun.classList.remove("on");
     el.ledDoor.classList.remove("on");
-    el.facha.classList.remove("show");
+    hush();
     paintSteps("");
   }
 
@@ -497,20 +592,17 @@
     el.start.textContent = "Iniciar";
     el.cancel.disabled = true;
 
-    // *** lo importante ***
-    log('Lavado terminado → "QUE FACHA"');
-    el.facha.classList.add("show");
-    jingle();
-    setTimeout(() => say("¡Qué facha!"), 650);
-    el.ok.focus();
+    // *** lo importante: lo dice el lavarropas ***
+    log('Lavado terminado → el lavarropas dice "¡QUÉ FACHA!"');
+    shout();
   }
 
   el.start.addEventListener("click", start);
   el.cancel.addEventListener("click", cancel);
-  el.ok.addEventListener("click", () => { el.facha.classList.remove("show"); reset(); });
-  el.facha.addEventListener("click", (e) => { if (e.target === el.facha) el.ok.click(); });
+  el.bubbleX.addEventListener("click", () => { hush(); reset(); });
+  el.repeat.addEventListener("click", () => { jingle(); setTimeout(() => say("¡Qué facha!"), 300); });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && el.facha.classList.contains("show")) el.ok.click();
+    if (e.key === "Escape" && el.bubble.classList.contains("show")) { hush(); reset(); }
     if (e.key === " " && e.target === document.body) { e.preventDefault(); start(); }
   });
 

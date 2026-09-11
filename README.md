@@ -20,8 +20,12 @@ xdg-open index.html   # o simplemente arrastralo al navegador
 - **Animación**: tambor girando, nivel de agua por fase, burbujas, y vibración de la
   máquina durante el centrifugado.
 - **Iniciar / Pausa / Reanudar / Cancelar** y log de eventos con timestamps.
-- **Al terminar**: cartel a pantalla completa "¡QUÉ FACHA!", jingle de 4 notas
-  (Web Audio) y la frase hablada en español. Ambos se pueden apagar desde Opciones.
+- **Al terminar lo dice la máquina**: le sale un globo de diálogo desde la puerta con
+  "¡QUÉ FACHA!", el display lo repite parpadeando, el parlante del panel se mueve al
+  ritmo de la voz y suena un jingle de 4 notas. La frase se pronuncia con
+  `speechSynthesis` (es-AR) y, si el navegador no tiene voz disponible, el lavarropas
+  la dice con su propia voz robótica sintetizada con Web Audio. Botón "Repetilo" para
+  volver a escucharla; voz y chicharra se apagan desde Opciones.
 
 Respeta `prefers-reduced-motion` (desactiva animaciones) y funciona igual si el
 navegador bloquea audio o no tiene voces en español.

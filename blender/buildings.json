@@ -1,0 +1,1402 @@
+[
+ {
+  "key": "arq1",
+  "name": "Puesto de Arqueros",
+  "family": "arq",
+  "tier": 1,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "esc1",
+  "name": "Altar de escarcha",
+  "family": "esc",
+  "tier": 1,
+  "tiers": 8,
+  "kind": "frost",
+  "shape": {
+   "body": "round",
+   "roof": "spire",
+   "palette": "ice",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "bal1",
+  "name": "Ballesta ligera",
+  "family": "bal",
+  "tier": 1,
+  "tiers": 8,
+  "kind": "bolt",
+  "shape": {
+   "body": "frame",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "ballista"
+  }
+ },
+ {
+  "key": "eco1",
+  "name": "Choza del leñador",
+  "family": "eco",
+  "tier": 1,
+  "tiers": 8,
+  "kind": "econ",
+  "shape": {
+   "body": "house",
+   "roof": "gable",
+   "palette": "farm",
+   "figure": "none"
+  }
+ },
+ {
+  "key": "fue1",
+  "name": "Brasero de guerra",
+  "family": "fue",
+  "tier": 1,
+  "tiers": 8,
+  "kind": "flame",
+  "shape": {
+   "body": "square",
+   "roof": "brazier",
+   "palette": "ember",
+   "figure": "flame"
+  }
+ },
+ {
+  "key": "sie1",
+  "name": "Onagro",
+  "family": "sie",
+  "tier": 1,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "aur1",
+  "name": "Estandarte de guerra",
+  "family": "aur",
+  "tier": 1,
+  "tiers": 8,
+  "kind": "aura",
+  "shape": {
+   "body": "keep",
+   "roof": "flat",
+   "palette": "royal",
+   "figure": "banner"
+  }
+ },
+ {
+  "key": "arq2",
+  "name": "Torre de Arqueros",
+  "family": "arq",
+  "tier": 2,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "ven1",
+  "name": "Choza del alquimista",
+  "family": "ven",
+  "tier": 1,
+  "tiers": 8,
+  "kind": "poison",
+  "shape": {
+   "body": "hut",
+   "roof": "dome",
+   "palette": "venom",
+   "figure": "cauldron"
+  }
+ },
+ {
+  "key": "tor1",
+  "name": "Pararrayos",
+  "family": "tor",
+  "tier": 1,
+  "tiers": 8,
+  "kind": "chain",
+  "shape": {
+   "body": "obelisk",
+   "roof": "spire",
+   "palette": "storm",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "esc2",
+  "name": "Torre de Escarcha",
+  "family": "esc",
+  "tier": 2,
+  "tiers": 8,
+  "kind": "frost",
+  "shape": {
+   "body": "round",
+   "roof": "spire",
+   "palette": "ice",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "pre1",
+  "name": "Puesto de vigía",
+  "family": "pre",
+  "tier": 1,
+  "tiers": 8,
+  "kind": "sniper",
+  "shape": {
+   "body": "tall",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "bal2",
+  "name": "Ballesta de asedio",
+  "family": "bal",
+  "tier": 2,
+  "tiers": 8,
+  "kind": "bolt",
+  "shape": {
+   "body": "frame",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "ballista"
+  }
+ },
+ {
+  "key": "eco2",
+  "name": "Granja",
+  "family": "eco",
+  "tier": 2,
+  "tiers": 8,
+  "kind": "econ",
+  "shape": {
+   "body": "house",
+   "roof": "gable",
+   "palette": "farm",
+   "figure": "none"
+  }
+ },
+ {
+  "key": "sie2",
+  "name": "Catapulta",
+  "family": "sie",
+  "tier": 2,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "fue2",
+  "name": "Pira arcana",
+  "family": "fue",
+  "tier": 2,
+  "tiers": 8,
+  "kind": "flame",
+  "shape": {
+   "body": "square",
+   "roof": "brazier",
+   "palette": "ember",
+   "figure": "flame"
+  }
+ },
+ {
+  "key": "fri1",
+  "name": "Tótem de escarcha",
+  "family": "fri",
+  "tier": 1,
+  "tiers": 5,
+  "kind": "slowfield",
+  "shape": {
+   "body": "circle",
+   "roof": "none",
+   "palette": "ice",
+   "figure": "runes"
+  }
+ },
+ {
+  "key": "arq3",
+  "name": "Torre de Ballesteros",
+  "family": "arq",
+  "tier": 3,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "mul1",
+  "name": "Torre de honderos",
+  "family": "mul",
+  "tier": 1,
+  "tiers": 7,
+  "kind": "multi",
+  "shape": {
+   "body": "battery",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "battery"
+  }
+ },
+ {
+  "key": "aur2",
+  "name": "Puesto de mando",
+  "family": "aur",
+  "tier": 2,
+  "tiers": 8,
+  "kind": "aura",
+  "shape": {
+   "body": "keep",
+   "roof": "flat",
+   "palette": "royal",
+   "figure": "banner"
+  }
+ },
+ {
+  "key": "ven2",
+  "name": "Torre de esporas",
+  "family": "ven",
+  "tier": 2,
+  "tiers": 8,
+  "kind": "poison",
+  "shape": {
+   "body": "hut",
+   "roof": "dome",
+   "palette": "venom",
+   "figure": "cauldron"
+  }
+ },
+ {
+  "key": "bot1",
+  "name": "Recaudador de impuestos",
+  "family": "bot",
+  "tier": 1,
+  "tiers": 4,
+  "kind": "loot",
+  "shape": {
+   "body": "house",
+   "roof": "dome",
+   "palette": "royal",
+   "figure": "coin"
+  }
+ },
+ {
+  "key": "tor2",
+  "name": "Torre de chispas",
+  "family": "tor",
+  "tier": 2,
+  "tiers": 8,
+  "kind": "chain",
+  "shape": {
+   "body": "obelisk",
+   "roof": "spire",
+   "palette": "storm",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "sie3",
+  "name": "Catapulta reforzada",
+  "family": "sie",
+  "tier": 3,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "esc3",
+  "name": "Obelisco helado",
+  "family": "esc",
+  "tier": 3,
+  "tiers": 8,
+  "kind": "frost",
+  "shape": {
+   "body": "round",
+   "roof": "spire",
+   "palette": "ice",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "pre2",
+  "name": "Torre de cazadores",
+  "family": "pre",
+  "tier": 2,
+  "tiers": 8,
+  "kind": "sniper",
+  "shape": {
+   "body": "tall",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "eco3",
+  "name": "Molino harinero",
+  "family": "eco",
+  "tier": 3,
+  "tiers": 8,
+  "kind": "econ",
+  "shape": {
+   "body": "house",
+   "roof": "gable",
+   "palette": "farm",
+   "figure": "none"
+  }
+ },
+ {
+  "key": "bal3",
+  "name": "Escorpión",
+  "family": "bal",
+  "tier": 3,
+  "tiers": 8,
+  "kind": "bolt",
+  "shape": {
+   "body": "frame",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "ballista"
+  }
+ },
+ {
+  "key": "arq4",
+  "name": "Nido de Saeteros",
+  "family": "arq",
+  "tier": 4,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "fue3",
+  "name": "Torre de fuego",
+  "family": "fue",
+  "tier": 3,
+  "tiers": 8,
+  "kind": "flame",
+  "shape": {
+   "body": "square",
+   "roof": "brazier",
+   "palette": "ember",
+   "figure": "flame"
+  }
+ },
+ {
+  "key": "aur3",
+  "name": "Cuartel",
+  "family": "aur",
+  "tier": 3,
+  "tiers": 8,
+  "kind": "aura",
+  "shape": {
+   "body": "keep",
+   "roof": "flat",
+   "palette": "royal",
+   "figure": "banner"
+  }
+ },
+ {
+  "key": "fri2",
+  "name": "Círculo rúnico",
+  "family": "fri",
+  "tier": 2,
+  "tiers": 5,
+  "kind": "slowfield",
+  "shape": {
+   "body": "circle",
+   "roof": "none",
+   "palette": "ice",
+   "figure": "runes"
+  }
+ },
+ {
+  "key": "ven3",
+  "name": "Caldero ponzoñoso",
+  "family": "ven",
+  "tier": 3,
+  "tiers": 8,
+  "kind": "poison",
+  "shape": {
+   "body": "hut",
+   "roof": "dome",
+   "palette": "venom",
+   "figure": "cauldron"
+  }
+ },
+ {
+  "key": "mul2",
+  "name": "Torre de venablos",
+  "family": "mul",
+  "tier": 2,
+  "tiers": 7,
+  "kind": "multi",
+  "shape": {
+   "body": "battery",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "battery"
+  }
+ },
+ {
+  "key": "sie4",
+  "name": "Trabuquete",
+  "family": "sie",
+  "tier": 4,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "tor3",
+  "name": "Obelisco de tormenta",
+  "family": "tor",
+  "tier": 3,
+  "tiers": 8,
+  "kind": "chain",
+  "shape": {
+   "body": "obelisk",
+   "roof": "spire",
+   "palette": "storm",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "arq5",
+  "name": "Torre de Arqueros Élficos",
+  "family": "arq",
+  "tier": 5,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "esc4",
+  "name": "Torre de ventisca",
+  "family": "esc",
+  "tier": 4,
+  "tiers": 8,
+  "kind": "frost",
+  "shape": {
+   "body": "round",
+   "roof": "spire",
+   "palette": "ice",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "eco4",
+  "name": "Mina de oro",
+  "family": "eco",
+  "tier": 4,
+  "tiers": 8,
+  "kind": "econ",
+  "shape": {
+   "body": "house",
+   "roof": "gable",
+   "palette": "farm",
+   "figure": "none"
+  }
+ },
+ {
+  "key": "pre3",
+  "name": "Nido de águilas",
+  "family": "pre",
+  "tier": 3,
+  "tiers": 8,
+  "kind": "sniper",
+  "shape": {
+   "body": "tall",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "bal4",
+  "name": "Balista pesada",
+  "family": "bal",
+  "tier": 4,
+  "tiers": 8,
+  "kind": "bolt",
+  "shape": {
+   "body": "frame",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "ballista"
+  }
+ },
+ {
+  "key": "fue4",
+  "name": "Horno rúnico",
+  "family": "fue",
+  "tier": 4,
+  "tiers": 8,
+  "kind": "flame",
+  "shape": {
+   "body": "square",
+   "roof": "brazier",
+   "palette": "ember",
+   "figure": "flame"
+  }
+ },
+ {
+  "key": "bot2",
+  "name": "Tienda del prestamista",
+  "family": "bot",
+  "tier": 2,
+  "tiers": 4,
+  "kind": "loot",
+  "shape": {
+   "body": "house",
+   "roof": "dome",
+   "palette": "royal",
+   "figure": "coin"
+  }
+ },
+ {
+  "key": "aur4",
+  "name": "Taller del armero",
+  "family": "aur",
+  "tier": 4,
+  "tiers": 8,
+  "kind": "aura",
+  "shape": {
+   "body": "keep",
+   "roof": "flat",
+   "palette": "royal",
+   "figure": "banner"
+  }
+ },
+ {
+  "key": "sie5",
+  "name": "Trabuquete pesado",
+  "family": "sie",
+  "tier": 5,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "ven4",
+  "name": "Torre de miasma",
+  "family": "ven",
+  "tier": 4,
+  "tiers": 8,
+  "kind": "poison",
+  "shape": {
+   "body": "hut",
+   "roof": "dome",
+   "palette": "venom",
+   "figure": "cauldron"
+  }
+ },
+ {
+  "key": "mul3",
+  "name": "Torre de andanada",
+  "family": "mul",
+  "tier": 3,
+  "tiers": 7,
+  "kind": "multi",
+  "shape": {
+   "body": "battery",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "battery"
+  }
+ },
+ {
+  "key": "arq6",
+  "name": "Atalaya de Tiradores",
+  "family": "arq",
+  "tier": 6,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "tor4",
+  "name": "Torre de rayos",
+  "family": "tor",
+  "tier": 4,
+  "tiers": 8,
+  "kind": "chain",
+  "shape": {
+   "body": "obelisk",
+   "roof": "spire",
+   "palette": "storm",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "fri3",
+  "name": "Menhir helado",
+  "family": "fri",
+  "tier": 3,
+  "tiers": 5,
+  "kind": "slowfield",
+  "shape": {
+   "body": "circle",
+   "roof": "none",
+   "palette": "ice",
+   "figure": "runes"
+  }
+ },
+ {
+  "key": "esc5",
+  "name": "Cúpula glacial",
+  "family": "esc",
+  "tier": 5,
+  "tiers": 8,
+  "kind": "frost",
+  "shape": {
+   "body": "round",
+   "roof": "spire",
+   "palette": "ice",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "eco5",
+  "name": "Mercado",
+  "family": "eco",
+  "tier": 5,
+  "tiers": 8,
+  "kind": "econ",
+  "shape": {
+   "body": "house",
+   "roof": "gable",
+   "palette": "farm",
+   "figure": "none"
+  }
+ },
+ {
+  "key": "pre4",
+  "name": "Torre de tiradores",
+  "family": "pre",
+  "tier": 4,
+  "tiers": 8,
+  "kind": "sniper",
+  "shape": {
+   "body": "tall",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "bal5",
+  "name": "Polibolos",
+  "family": "bal",
+  "tier": 5,
+  "tiers": 8,
+  "kind": "bolt",
+  "shape": {
+   "body": "frame",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "ballista"
+  }
+ },
+ {
+  "key": "fue5",
+  "name": "Columna ardiente",
+  "family": "fue",
+  "tier": 5,
+  "tiers": 8,
+  "kind": "flame",
+  "shape": {
+   "body": "square",
+   "roof": "brazier",
+   "palette": "ember",
+   "figure": "flame"
+  }
+ },
+ {
+  "key": "sie6",
+  "name": "Mortero de piedra",
+  "family": "sie",
+  "tier": 6,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "aur5",
+  "name": "Templo marcial",
+  "family": "aur",
+  "tier": 5,
+  "tiers": 8,
+  "kind": "aura",
+  "shape": {
+   "body": "keep",
+   "roof": "flat",
+   "palette": "royal",
+   "figure": "banner"
+  }
+ },
+ {
+  "key": "ven5",
+  "name": "Jardín venenoso",
+  "family": "ven",
+  "tier": 5,
+  "tiers": 8,
+  "kind": "poison",
+  "shape": {
+   "body": "hut",
+   "roof": "dome",
+   "palette": "venom",
+   "figure": "cauldron"
+  }
+ },
+ {
+  "key": "arq7",
+  "name": "Torre de Arqueros Reales",
+  "family": "arq",
+  "tier": 7,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "tor5",
+  "name": "Aguja eléctrica",
+  "family": "tor",
+  "tier": 5,
+  "tiers": 8,
+  "kind": "chain",
+  "shape": {
+   "body": "obelisk",
+   "roof": "spire",
+   "palette": "storm",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "bot3",
+  "name": "Casa de subastas",
+  "family": "bot",
+  "tier": 3,
+  "tiers": 4,
+  "kind": "loot",
+  "shape": {
+   "body": "house",
+   "roof": "dome",
+   "palette": "royal",
+   "figure": "coin"
+  }
+ },
+ {
+  "key": "mul4",
+  "name": "Batería de saetas",
+  "family": "mul",
+  "tier": 4,
+  "tiers": 7,
+  "kind": "multi",
+  "shape": {
+   "body": "battery",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "battery"
+  }
+ },
+ {
+  "key": "esc6",
+  "name": "Corazón de invierno",
+  "family": "esc",
+  "tier": 6,
+  "tiers": 8,
+  "kind": "frost",
+  "shape": {
+   "body": "round",
+   "roof": "spire",
+   "palette": "ice",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "eco6",
+  "name": "Casa de la moneda",
+  "family": "eco",
+  "tier": 6,
+  "tiers": 8,
+  "kind": "econ",
+  "shape": {
+   "body": "house",
+   "roof": "gable",
+   "palette": "farm",
+   "figure": "none"
+  }
+ },
+ {
+  "key": "pre5",
+  "name": "Atalaya larga",
+  "family": "pre",
+  "tier": 5,
+  "tiers": 8,
+  "kind": "sniper",
+  "shape": {
+   "body": "tall",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "bal6",
+  "name": "Balista de hierro",
+  "family": "bal",
+  "tier": 6,
+  "tiers": 8,
+  "kind": "bolt",
+  "shape": {
+   "body": "frame",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "ballista"
+  }
+ },
+ {
+  "key": "sie7",
+  "name": "Mortero de hierro",
+  "family": "sie",
+  "tier": 7,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "fue6",
+  "name": "Fragua de dragón",
+  "family": "fue",
+  "tier": 6,
+  "tiers": 8,
+  "kind": "flame",
+  "shape": {
+   "body": "square",
+   "roof": "brazier",
+   "palette": "ember",
+   "figure": "flame"
+  }
+ },
+ {
+  "key": "fri4",
+  "name": "Círculo de invierno",
+  "family": "fri",
+  "tier": 4,
+  "tiers": 5,
+  "kind": "slowfield",
+  "shape": {
+   "body": "circle",
+   "roof": "none",
+   "palette": "ice",
+   "figure": "runes"
+  }
+ },
+ {
+  "key": "aur6",
+  "name": "Academia de guerra",
+  "family": "aur",
+  "tier": 6,
+  "tiers": 8,
+  "kind": "aura",
+  "shape": {
+   "body": "keep",
+   "roof": "flat",
+   "palette": "royal",
+   "figure": "banner"
+  }
+ },
+ {
+  "key": "arq8",
+  "name": "Bastión de Saeteros",
+  "family": "arq",
+  "tier": 8,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "ven6",
+  "name": "Alambique mayor",
+  "family": "ven",
+  "tier": 6,
+  "tiers": 8,
+  "kind": "poison",
+  "shape": {
+   "body": "hut",
+   "roof": "dome",
+   "palette": "venom",
+   "figure": "cauldron"
+  }
+ },
+ {
+  "key": "tor6",
+  "name": "Yunque de trueno",
+  "family": "tor",
+  "tier": 6,
+  "tiers": 8,
+  "kind": "chain",
+  "shape": {
+   "body": "obelisk",
+   "roof": "spire",
+   "palette": "storm",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "sie8",
+  "name": "Bombarda",
+  "family": "sie",
+  "tier": 8,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "esc7",
+  "name": "Trono de hielo",
+  "family": "esc",
+  "tier": 7,
+  "tiers": 8,
+  "kind": "frost",
+  "shape": {
+   "body": "round",
+   "roof": "spire",
+   "palette": "ice",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "eco7",
+  "name": "Gremio de mercaderes",
+  "family": "eco",
+  "tier": 7,
+  "tiers": 8,
+  "kind": "econ",
+  "shape": {
+   "body": "house",
+   "roof": "gable",
+   "palette": "farm",
+   "figure": "none"
+  }
+ },
+ {
+  "key": "pre6",
+  "name": "Torre del Halcón",
+  "family": "pre",
+  "tier": 6,
+  "tiers": 8,
+  "kind": "sniper",
+  "shape": {
+   "body": "tall",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "bal7",
+  "name": "Balista Real",
+  "family": "bal",
+  "tier": 7,
+  "tiers": 8,
+  "kind": "bolt",
+  "shape": {
+   "body": "frame",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "ballista"
+  }
+ },
+ {
+  "key": "mul5",
+  "name": "Torre de descarga",
+  "family": "mul",
+  "tier": 5,
+  "tiers": 7,
+  "kind": "multi",
+  "shape": {
+   "body": "battery",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "battery"
+  }
+ },
+ {
+  "key": "fue7",
+  "name": "Faro de llamas",
+  "family": "fue",
+  "tier": 7,
+  "tiers": 8,
+  "kind": "flame",
+  "shape": {
+   "body": "square",
+   "roof": "brazier",
+   "palette": "ember",
+   "figure": "flame"
+  }
+ },
+ {
+  "key": "arq9",
+  "name": "Torre de Arqueros de Rocanegra",
+  "family": "arq",
+  "tier": 9,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "aur7",
+  "name": "Ciudadela menor",
+  "family": "aur",
+  "tier": 7,
+  "tiers": 8,
+  "kind": "aura",
+  "shape": {
+   "body": "keep",
+   "roof": "flat",
+   "palette": "royal",
+   "figure": "banner"
+  }
+ },
+ {
+  "key": "bot4",
+  "name": "Banca de Rocanegra",
+  "family": "bot",
+  "tier": 4,
+  "tiers": 4,
+  "kind": "loot",
+  "shape": {
+   "body": "house",
+   "roof": "dome",
+   "palette": "royal",
+   "figure": "coin"
+  }
+ },
+ {
+  "key": "ven7",
+  "name": "Torre de plaga",
+  "family": "ven",
+  "tier": 7,
+  "tiers": 8,
+  "kind": "poison",
+  "shape": {
+   "body": "hut",
+   "roof": "dome",
+   "palette": "venom",
+   "figure": "cauldron"
+  }
+ },
+ {
+  "key": "sie9",
+  "name": "Gran Bombarda",
+  "family": "sie",
+  "tier": 9,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "fri5",
+  "name": "Corona de Hielo",
+  "family": "fri",
+  "tier": 5,
+  "tiers": 5,
+  "kind": "slowfield",
+  "shape": {
+   "body": "circle",
+   "roof": "none",
+   "palette": "ice",
+   "figure": "runes"
+  }
+ },
+ {
+  "key": "tor7",
+  "name": "Corona de tormenta",
+  "family": "tor",
+  "tier": 7,
+  "tiers": 8,
+  "kind": "chain",
+  "shape": {
+   "body": "obelisk",
+   "roof": "spire",
+   "palette": "storm",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "eco8",
+  "name": "Tesorería Real",
+  "family": "eco",
+  "tier": 8,
+  "tiers": 8,
+  "kind": "econ",
+  "shape": {
+   "body": "house",
+   "roof": "gable",
+   "palette": "farm",
+   "figure": "none"
+  }
+ },
+ {
+  "key": "esc8",
+  "name": "Cima del Invierno Eterno",
+  "family": "esc",
+  "tier": 8,
+  "tiers": 8,
+  "kind": "frost",
+  "shape": {
+   "body": "round",
+   "roof": "spire",
+   "palette": "ice",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "pre7",
+  "name": "Ojo de la fortaleza",
+  "family": "pre",
+  "tier": 7,
+  "tiers": 8,
+  "kind": "sniper",
+  "shape": {
+   "body": "tall",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "bal8",
+  "name": "Gran Balista de Rocanegra",
+  "family": "bal",
+  "tier": 8,
+  "tiers": 8,
+  "kind": "bolt",
+  "shape": {
+   "body": "frame",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "ballista"
+  }
+ },
+ {
+  "key": "arq10",
+  "name": "Torre del Arquero Legendario",
+  "family": "arq",
+  "tier": 10,
+  "tiers": 10,
+  "kind": "arrow",
+  "shape": {
+   "body": "round",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "fue8",
+  "name": "Pira del Fénix",
+  "family": "fue",
+  "tier": 8,
+  "tiers": 8,
+  "kind": "flame",
+  "shape": {
+   "body": "square",
+   "roof": "brazier",
+   "palette": "ember",
+   "figure": "flame"
+  }
+ },
+ {
+  "key": "mul6",
+  "name": "Batería Real",
+  "family": "mul",
+  "tier": 6,
+  "tiers": 7,
+  "kind": "multi",
+  "shape": {
+   "body": "battery",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "battery"
+  }
+ },
+ {
+  "key": "aur8",
+  "name": "Gran Cuartel General",
+  "family": "aur",
+  "tier": 8,
+  "tiers": 8,
+  "kind": "aura",
+  "shape": {
+   "body": "keep",
+   "roof": "flat",
+   "palette": "royal",
+   "figure": "banner"
+  }
+ },
+ {
+  "key": "sie10",
+  "name": "Coloso de Asedio",
+  "family": "sie",
+  "tier": 10,
+  "tiers": 10,
+  "kind": "rock",
+  "shape": {
+   "body": "platform",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "catapult"
+  }
+ },
+ {
+  "key": "ven8",
+  "name": "Santuario de la Peste",
+  "family": "ven",
+  "tier": 8,
+  "tiers": 8,
+  "kind": "poison",
+  "shape": {
+   "body": "hut",
+   "roof": "dome",
+   "palette": "venom",
+   "figure": "cauldron"
+  }
+ },
+ {
+  "key": "tor8",
+  "name": "Trono del Trueno",
+  "family": "tor",
+  "tier": 8,
+  "tiers": 8,
+  "kind": "chain",
+  "shape": {
+   "body": "obelisk",
+   "roof": "spire",
+   "palette": "storm",
+   "figure": "orb"
+  }
+ },
+ {
+  "key": "pre8",
+  "name": "Ojo del Dragón",
+  "family": "pre",
+  "tier": 8,
+  "tiers": 8,
+  "kind": "sniper",
+  "shape": {
+   "body": "tall",
+   "roof": "cone",
+   "palette": "stone",
+   "figure": "archer"
+  }
+ },
+ {
+  "key": "mul7",
+  "name": "Tempestad de Saetas",
+  "family": "mul",
+  "tier": 7,
+  "tiers": 7,
+  "kind": "multi",
+  "shape": {
+   "body": "battery",
+   "roof": "none",
+   "palette": "wood",
+   "figure": "battery"
+  }
+ }
+]

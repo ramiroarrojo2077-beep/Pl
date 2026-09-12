@@ -399,6 +399,21 @@
       this.ringPool.push(r);
     }
 
+    /* Rayos encadenados de las torres de tormenta. */
+    this.boltPool = [];
+    for (var lb = 0; lb < 8; lb++) {
+      var geo2 = new THREE.BufferGeometry();
+      geo2.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8 * 3), 3));
+      var line = new THREE.Line(geo2, new THREE.LineBasicMaterial({
+        color: 0xbfe4ff, transparent: true, opacity: 0.9,
+        blending: THREE.AdditiveBlending, depthWrite: false
+      }));
+      line.frustumCulled = false;
+      line.visible = false;
+      this.scene.add(line);
+      this.boltPool.push(line);
+    }
+
     /* Llamaradas de la pira. */
     this.beamPool = [];
     var beamGeo = new THREE.CylinderGeometry(0.05, 0.16, 1, 6, 1, true);
@@ -554,24 +569,78 @@
   var TOWER_SCALE = 1.24;
 
   Renderer.prototype.towerModelName = function (tower) {
-    return 'tower_' + tower.type.key + '_' + (tower.level + 1);
+    return tower.type.model;
   };
 
   Renderer.prototype.makeTowerView = function (tower) {
+    var THREE = window.THREE;
     var model = this.models[this.towerModelName(tower)];
     var group = model.clone(true);
     group.position.set(w(tower.x), 0, w(tower.y));
     group.scale.setScalar(TOWER_SCALE);
     group.userData.tower = tower;
     this.scene.add(group);
-    return {
+
+    var view = {
       group: group,
-      level: tower.level,
+      level: -1,
       yaw: findPart(group, '__yaw'),
       arm: findPart(group, '__arm'),
       flame: findPart(group, '__flame'),
-      orb: findPart(group, '__orb')
+      orb: findPart(group, '__orb'),
+      marks: null,
+      field: null
     };
+
+    /* Los edificios pasivos enseñan su radio de influencia en todo momento. */
+    if (tower.type.passive && tower.type.levels[0].range) {
+      var col = tower.type.kind === 'aura' ? 0xf0cf87
+        : tower.type.kind === 'slowfield' ? 0x9fdcf5
+        : 0xd9a441;
+      var field = new THREE.Mesh(
+        new THREE.RingGeometry(0.965, 1, 48),
+        new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.3,
+          side: THREE.DoubleSide, depthWrite: false })
+      );
+      field.rotation.x = -Math.PI / 2;
+      field.position.set(w(tower.x), 0.025, w(tower.y));
+      this.scene.add(field);
+      view.field = field;
+    }
+    return view;
+  };
+
+  /* Aros de nivel: la mejora se nota sin cambiar de modelo. */
+  Renderer.prototype.updateTowerMarks = function (view, tower) {
+    var THREE = window.THREE;
+    if (view.marks) {
+      view.group.remove(view.marks);
+      view.marks.traverse(function (o) { if (o.isMesh) o.geometry.dispose(); });
+    }
+    view.level = tower.level;
+    if (tower.level === 0) { view.marks = null; return; }
+
+    var marks = new THREE.Group();
+    this.goldMat = this.goldMat || new THREE.MeshStandardMaterial({
+      color: 0xd9a441, roughness: 0.3, metalness: 0.9
+    });
+    var ring = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.022, 6, 20), this.goldMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.2;
+    marks.add(ring);
+
+    if (tower.level >= 2) {
+      var crown = new THREE.Mesh(new THREE.OctahedronGeometry(0.075), this.goldMat);
+      crown.position.y = 0.28;
+      crown.position.x = 0.34;
+      marks.add(crown);
+      var crown2 = crown.clone();
+      crown2.position.x = -0.34;
+      marks.add(crown2);
+    }
+    marks.traverse(function (o) { if (o.isMesh) o.castShadow = true; });
+    view.group.add(marks);
+    view.marks = marks;
   };
 
   Renderer.prototype.syncTowers = function (dt) {
@@ -581,10 +650,15 @@
     this.game.towers.forEach(function (tower) {
       seen.add(tower);
       var view = self.towerViews.get(tower);
-      if (!view || view.level !== tower.level) {
-        if (view) self.scene.remove(view.group);
+      if (!view) {
         view = self.makeTowerView(tower);
         self.towerViews.set(tower, view);
+      }
+      if (view.level !== tower.level) self.updateTowerMarks(view, tower);
+      if (view.field) {
+        var fr = w(tower.stats().range);
+        view.field.scale.setScalar(fr);
+        view.field.material.opacity = 0.12 + Math.sin(self.time * 1.6 + tower.col) * 0.05;
       }
       if (view.yaw) view.yaw.rotation.y = yawFor(tower.angle);
 
@@ -618,6 +692,7 @@
     this.towerViews.forEach(function (view, tower) {
       if (seen.has(tower)) return;
       self.scene.remove(view.group);
+      if (view.field) self.scene.remove(view.field);
       self.towerViews.delete(tower);
     });
   };
@@ -751,7 +826,10 @@
   /* Proyectiles y efectos                                               */
   /* ------------------------------------------------------------------ */
 
-  var PROJ_MODEL = { arrow: 'proj_arrow', bolt: 'proj_bolt', rock: 'proj_rock', frost: 'proj_orb' };
+  var PROJ_MODEL = {
+    arrow: 'proj_arrow', bolt: 'proj_bolt', rock: 'proj_rock',
+    frost: 'proj_orb', poison: 'proj_orb'
+  };
 
   Renderer.prototype.syncProjectiles = function () {
     var self = this;
@@ -762,6 +840,12 @@
       var view = self.projViews.get(p);
       if (!view) {
         view = self.models[PROJ_MODEL[p.kind]].clone(true);
+        if (p.kind === 'poison') {
+          self.poisonMat = self.poisonMat || new window.THREE.MeshStandardMaterial({
+            color: 0xa8e04a, emissive: 0x6fb020, emissiveIntensity: 1.6, roughness: 0.4
+          });
+          view.traverse(function (o) { if (o.isMesh) o.material = self.poisonMat; });
+        }
         self.scene.add(view);
         self.projViews.set(p, view);
       }
@@ -779,7 +863,7 @@
       }
       view.position.set(w(p.x), height, w(p.y));
       view.rotation.y = yawFor(p.angle || 0);
-      if (p.kind === 'frost') {
+      if (p.kind === 'frost' || p.kind === 'poison') {
         view.rotation.x += 0.1;
         view.position.y = height + Math.sin(p.life * 12) * 0.04;
       }
@@ -827,6 +911,24 @@
       ring.material.opacity = Math.max(0, data.life / data.maxLife) * 0.85;
     }
 
+    /* Rayos activos. */
+    for (var b = 0; b < this.boltPool.length; b++) {
+      var line = this.boltPool[b];
+      var data = fx.bolts[b];
+      if (!data) { line.visible = false; continue; }
+      var arr = line.geometry.attributes.position.array;
+      var n = Math.min(data.points.length, 8);
+      for (var q = 0; q < n; q++) {
+        arr[q * 3] = w(data.points[q].x);
+        arr[q * 3 + 1] = data.points[q].h + 0.25;
+        arr[q * 3 + 2] = w(data.points[q].y);
+      }
+      line.geometry.setDrawRange(0, n);
+      line.geometry.attributes.position.needsUpdate = true;
+      line.material.opacity = Math.max(0, data.life / data.max);
+      line.visible = true;
+    }
+
     /* Chorros de fuego de las piras activas. */
     var beamIdx = 0;
     var self = this;
@@ -871,7 +973,7 @@
     if (game.buildType && hover) {
       var type = TD.TOWER_TYPES[game.buildType];
       var ok = game.canBuild(hover.col, hover.row) && game.gold >= type.cost;
-      ghostName = 'tower_' + type.key + '_1';
+      ghostName = type.model;
       ring = { x: hover.col + 0.5, z: hover.row + 0.5, r: w(game.towerRange(type, 0)), color: ok ? 0x8fdc6a : 0xe06450 };
       this.tileMarker.visible = true;
       this.tileMarker.position.set(hover.col + 0.5, 0.02, hover.row + 0.5);
@@ -1002,7 +1104,10 @@
 
   Renderer.prototype.resetViews = function () {
     var self = this;
-    this.towerViews.forEach(function (v) { self.scene.remove(v.group); });
+    this.towerViews.forEach(function (v) {
+      self.scene.remove(v.group);
+      if (v.field) self.scene.remove(v.field);
+    });
     this.towerViews.clear();
     this.enemyViews.forEach(function (v) {
       self.scene.remove(v.group);

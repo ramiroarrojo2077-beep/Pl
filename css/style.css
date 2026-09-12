@@ -429,3 +429,53 @@ canvas#game {
 .pips { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
 .pip { width: 6px; height: 6px; border-radius: 50%; background: #3a3128; border: 1px solid #55452f; }
 .pip.on { background: var(--gold); border-color: var(--gold-soft); }
+
+/* ---------- Tienda de 100 construcciones ---------- */
+.fam-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.fam-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  letter-spacing: .02em;
+  color: var(--parchment-dim);
+  padding: 4px 7px;
+  border: 1px solid #3a2d20;
+  border-radius: 3px;
+  background: rgba(0,0,0,.3);
+  cursor: pointer;
+}
+.fam-tab span { font-size: 12px; }
+.fam-tab:hover { border-color: var(--gold); color: var(--parchment); }
+.fam-tab.on {
+  color: #1a1209;
+  border-color: #8a6420;
+  background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+}
+.fam-tab.ready:not(.on) { color: var(--gold-soft); border-color: #6b5330; }
+
+.fam-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+.fam-list::-webkit-scrollbar { width: 8px; }
+.fam-list::-webkit-scrollbar-thumb { background: #4a3a28; border-radius: 4px; }
+
+.card-tier { color: var(--parchment-dim); font-size: 11px; letter-spacing: 0; }
+.card.locked { opacity: .42; cursor: not-allowed; filter: grayscale(.7); }
+.card.locked:hover { border-color: #3a2d20; transform: none; }
+.card.locked .card-cost { color: var(--parchment-dim); }
+
+.nw-new { border-color: var(--gold) !important; color: var(--gold-soft); }

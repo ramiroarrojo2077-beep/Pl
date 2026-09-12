@@ -1,4 +1,9 @@
-/* Guion de las oleadas: 20 asaltos escritos a mano + modo infinito. */
+/* Guion de oleadas: 20 asaltos escritos a mano y después, oleadas infinitas.
+ *
+ * A partir de la 21 la composición se genera sola: más enemigos, más vida y un
+ * jefe cada cinco oleadas. El oro que sueltan crece con ellas para que las
+ * construcciones de grado alto lleguen a ser asequibles.
+ */
 (function (TD) {
   'use strict';
 
@@ -30,39 +35,68 @@
     [g('dragon', 1, 1), g('wyvern', 10, 0.7, 4), g('ogre', 2, 2.5, 10), g('knight', 8, 0.7, 16)]
   ];
 
-  var ENDLESS_POOL = [
-    [g('orc', 16, 0.5), g('wolf', 14, 0.3, 4)],
-    [g('knight', 14, 0.6), g('necromancer', 3, 2, 8)],
-    [g('wyvern', 16, 0.5), g('ogre', 3, 2, 6)],
-    [g('ogre', 6, 1.8), g('orc', 14, 0.5, 4)],
-    [g('dragon', 1, 1), g('wyvern', 12, 0.55, 5)],
-    [g('warlord', 2, 4), g('knight', 12, 0.6, 6)]
+  /* Tropa disponible según lo avanzada que esté la partida. */
+  var ROSTER = [
+    { type: 'goblin', from: 1, weight: 3, gap: 0.42 },
+    { type: 'wolf', from: 3, weight: 3, gap: 0.3 },
+    { type: 'orc', from: 4, weight: 3, gap: 0.5 },
+    { type: 'wyvern', from: 7, weight: 2, gap: 0.55 },
+    { type: 'knight', from: 8, weight: 2.5, gap: 0.6 },
+    { type: 'necromancer', from: 12, weight: 0.7, gap: 2.0 },
+    { type: 'ogre', from: 13, weight: 1.2, gap: 1.8 }
   ];
 
   TD.TOTAL_WAVES = WAVES.length;
 
-  /* Devuelve la definición de la oleada n (1-based), escalada si es infinita. */
-  /* La dificultad sube con la oleada: los primeros asaltos son de tanteo. */
-  function scriptedHpMul(n) {
-    return n <= 4 ? 1 : Math.pow(1.12, n - 4);
+  /* La dificultad sube con la oleada; los primeros asaltos son de tanteo. */
+  function hpMul(n) {
+    if (n <= 4) return 1;
+    /* Crecimiento exponencial y, pasada la treintena, un empujón extra: en el
+       modo infinito la horda tiene que terminar comiéndose cualquier defensa. */
+    return Math.pow(1.12, n - 4) * (1 + Math.max(0, n - 30) * 0.025);
+  }
+
+  /* El oro también crece: sin eso, los edificios de grado alto serían inalcanzables. */
+  TD.waveGoldMul = function (n) {
+    return 1 + 0.09 * n + 0.0016 * n * n;
+  };
+
+  TD.waveHpMul = hpMul;
+
+  function generated(n) {
+    var rnd = TD.rng(n * 7919);
+    var pool = ROSTER.filter(function (r) { return n >= r.from; });
+    var budget = 16 + (n - 20) * 1.05;
+    var groups = [];
+    var families = 3 + Math.floor(rnd() * 2);
+
+    var total = pool.reduce(function (a, r) { return a + r.weight; }, 0);
+    for (var i = 0; i < families; i++) {
+      var roll = rnd() * total;
+      var chosen = pool[0];
+      for (var j = 0; j < pool.length; j++) {
+        roll -= pool[j].weight;
+        if (roll <= 0) { chosen = pool[j]; break; }
+      }
+      var share = budget * (0.22 + rnd() * 0.3);
+      var count = Math.max(2, Math.round(share / (chosen.type === 'ogre' ? 3 : 1)));
+      groups.push(g(chosen.type, count, chosen.gap, i * (2 + rnd() * 4)));
+    }
+
+    /* Un jefe cada cinco oleadas, y más de uno cuando la cosa se pone seria. */
+    if (n % 5 === 0) {
+      var bosses = 1 + Math.floor((n - 20) / 25);
+      groups.unshift(g(n % 10 === 0 ? 'dragon' : 'warlord', bosses, 3.5, 1));
+    }
+    return groups;
   }
 
   TD.getWave = function (n) {
-    if (n <= WAVES.length) {
-      return {
-        groups: WAVES[n - 1],
-        hpMul: scriptedHpMul(n),
-        speedMul: 1,
-        endless: false
-      };
-    }
-    var over = n - WAVES.length;
-    var groups = ENDLESS_POOL[(over - 1) % ENDLESS_POOL.length];
     return {
-      groups: groups,
-      hpMul: scriptedHpMul(WAVES.length) * Math.pow(1.16, over),
-      speedMul: Math.min(1.5, 1 + over * 0.015),
-      endless: true
+      groups: n <= WAVES.length ? WAVES[n - 1] : generated(n),
+      hpMul: hpMul(n),
+      speedMul: Math.min(1.45, 1 + Math.max(0, n - 20) * 0.008),
+      scripted: n <= WAVES.length
     };
   };
 

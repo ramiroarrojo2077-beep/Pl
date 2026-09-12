@@ -28,6 +28,7 @@
 
     switch (this.kind) {
       case 'arrow':
+      case 'poison':
       case 'frost': {
         var tgt = this.target;
         if (tgt && !tgt.dead && !tgt.leaked) {
@@ -52,6 +53,8 @@
         this.y += (dy / d) * step;
         if (this.kind === 'frost' && Math.random() < 0.5) {
           game.effects.spark(this.x, this.y, '#aae1fa', 0.35, 1.6, 0.55);
+        } else if (this.kind === 'poison' && Math.random() < 0.5) {
+          game.effects.spark(this.x, this.y, '#9ad24f', 0.35, 1.8, 0.55);
         }
         if (this.life > 3) this.done = true;
         break;
@@ -110,11 +113,15 @@
         var falloff = TD.clamp(1 - (d / (this.splash * 1.25)) * 0.55, 0.45, 1);
         game.dealDamage(e, this.damage * falloff, this.damageType, this.tower);
         if (this.slow) e.applySlow(this.slow, this.slowTime);
+        if (this.poison) e.applyPoison(this.poison, this.poisonTime);
         hitAny = true;
       }
       if (this.kind === 'frost') {
         game.effects.ring(this.x, this.y, this.splash, 'rgba(150,220,250,.85)', 0.12);
         game.effects.burst(this.x, this.y, '#bfe9ff', 12, 70, 0.5);
+      } else if (this.kind === 'poison') {
+        game.effects.ring(this.x, this.y, this.splash, 'rgba(150,220,120,.85)', 0.12);
+        game.effects.burst(this.x, this.y, '#9ad24f', 14, 60, 0.45);
       } else {
         game.effects.explosion(this.x, this.y, this.splash);
         TD.Audio.boom();
@@ -136,12 +143,24 @@
     this.particles = [];
     this.texts = [];
     this.rings = [];
+    this.bolts = [];
   }
 
   Effects.prototype.clear = function () {
     this.particles.length = 0;
     this.texts.length = 0;
     this.rings.length = 0;
+    this.bolts.length = 0;
+  };
+
+  /* Rayo encadenado: una polilínea que se apaga enseguida. */
+  Effects.prototype.lightning = function (points) {
+    if (points.length < 2) return;
+    this.bolts.push({ points: points, life: 0.22, max: 0.22 });
+    if (this.bolts.length > 8) this.bolts.shift();
+    for (var i = 1; i < points.length; i++) {
+      this.burst(points[i].x, points[i].y, '#cfe6ff', 4, 60, points[i].h);
+    }
   };
 
   /* x, y van en píxeles del tablero; h es la altura en casillas. */
@@ -287,6 +306,10 @@
       var t = this.texts[i];
       t.life -= dt;
       if (t.life <= 0) this.texts.splice(i, 1);
+    }
+    for (i = this.bolts.length - 1; i >= 0; i--) {
+      this.bolts[i].life -= dt;
+      if (this.bolts[i].life <= 0) this.bolts.splice(i, 1);
     }
   };
 

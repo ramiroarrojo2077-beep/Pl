@@ -79,6 +79,10 @@
       noise({ dur: 0.16, freq: 1800, to: 400, vol: 0.16 });
       tone({ type: 'square', freq: 180, to: 90, dur: 0.1, vol: 0.07 });
     }); },
+    zap: function () { throttled('zap', 70, function () {
+      noise({ dur: 0.18, freq: 5200, to: 900, vol: 0.12, filter: 'bandpass' });
+      tone({ type: 'square', freq: 900, to: 220, dur: 0.12, vol: 0.06 });
+    }); },
     frost: function () { throttled('frost', 90, function () { tone({ type: 'sine', freq: 1500, to: 520, dur: 0.22, vol: 0.09 }); }); },
     fire: function () { throttled('fire', 260, function () { noise({ dur: 0.3, freq: 700, to: 250, vol: 0.05 }); }); },
     launch: function () { throttled('launch', 90, function () { tone({ type: 'triangle', freq: 130, to: 300, dur: 0.18, vol: 0.12 }); }); },

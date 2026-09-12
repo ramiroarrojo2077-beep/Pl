@@ -67,6 +67,8 @@
     this.slowTimer = 0;
     this.burnDps = 0;
     this.burnTimer = 0;
+    this.poisonDps = 0;
+    this.poisonTimer = 0;
     this.flash = 0;
     this.healTimer = type.heal ? type.heal.every : 0;
     this.dead = false;
@@ -95,6 +97,12 @@
       this.burnTimer -= dt;
       this.damage(this.burnDps * dt, 'magic', game, true);
       if (this.burnTimer <= 0) this.burnDps = 0;
+      if (this.dead) return;
+    }
+    if (this.poisonTimer > 0) {
+      this.poisonTimer -= dt;
+      this.damage(this.poisonDps * dt, 'magic', game, true);
+      if (this.poisonTimer <= 0) this.poisonDps = 0;
       if (this.dead) return;
     }
     if (this.flash > 0) this.flash -= dt;
@@ -152,6 +160,11 @@
     } else {
       this.slowTimer = Math.max(this.slowTimer, duration * 0.5);
     }
+  };
+
+  Enemy.prototype.applyPoison = function (dps, duration) {
+    this.poisonDps = Math.max(this.poisonDps, dps);
+    this.poisonTimer = Math.max(this.poisonTimer, duration);
   };
 
   Enemy.prototype.applyBurn = function (dps, duration) {

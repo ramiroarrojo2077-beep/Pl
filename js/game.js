@@ -12,6 +12,8 @@
   var PREP_NEXT = 13;
   var SPEEDS = [1, 2, 3];
   var BEST_KEY = 'rocanegra.best';
+  var BEST_WAVE_KEY = 'rocanegra.bestWave';
+  var MILESTONE = 10;
 
   function Game(canvas, hooks) {
     this.canvas = canvas;
@@ -40,7 +42,8 @@
     this.lives = START_LIVES;
     this.wave = 0;
     this.score = 0;
-    this.endless = false;
+    this.income = 0;
+    this.auraStamp = 0;
     this.kills = 0;
     this.leaked = 0;
     this.killGold = 0;
@@ -51,6 +54,7 @@
     this.spawnQueue = [];
     this.perks = {};
     this.perkStamp = 0;
+    this.shopFamily = TD.FAMILIES[0].id;
     this.perkMul = TD.perkMultipliers(this.perks, 0);
     this.effects.clear();
     this.prepTimer = PREP_FIRST;
@@ -119,6 +123,11 @@
   /* Construcción                                                        */
   /* ------------------------------------------------------------------ */
 
+  /* Un edificio está disponible en cuanto se alcanza su oleada de desbloqueo. */
+  Game.prototype.isUnlocked = function (type) {
+    return (this.wave + 1) >= type.unlockWave;
+  };
+
   Game.prototype.canBuild = function (col, row) {
     if (!this.level.isFree(col, row)) return false;
     return !this.towerGrid[col + ',' + row];
@@ -134,6 +143,11 @@
     if (!type) return;
     var cx = (col + 0.5) * TD.TILE;
     var cy = (row + 0.5) * TD.TILE;
+    if (!this.isUnlocked(type)) {
+      TD.Audio.denied();
+      this.effects.text(cx, cy, 'Se desbloquea en la oleada ' + type.unlockWave, '#e08a80', 13);
+      return;
+    }
     if (!this.canBuild(col, row)) {
       TD.Audio.denied();
       this.effects.text(cx, cy, 'Terreno ocupado', '#e08a80', 13);
@@ -149,6 +163,7 @@
     this.towers.push(tower);
     this.towerGrid[col + ',' + row] = tower;
     this.gold -= type.cost;
+    this.recomputeAuras();
     this.effects.dust(tower.x, tower.y);
     TD.Audio.build();
     this.log('Construida ' + type.name + '.', 'good');
@@ -163,6 +178,7 @@
     if (this.gold < cost) { TD.Audio.denied(); return; }
     this.gold -= cost;
     t.upgrade();
+    this.recomputeAuras();
     TD.Audio.upgrade();
     this.effects.ring(t.x, t.y, 42, 'rgba(217,164,65,.9)', 0.12);
     this.effects.text(t.x, t.y, '¡Mejorada!', '#f0cf87', 14, 1.3);
@@ -178,6 +194,7 @@
     this.gold += value;
     this.towers.splice(this.towers.indexOf(t), 1);
     delete this.towerGrid[t.col + ',' + t.row];
+    this.recomputeAuras();
     this.effects.dust(t.x, t.y);
     this.effects.text(t.x, t.y, '+' + value, '#f0cf87', 14, 1.1);
     TD.Audio.sell();
@@ -206,6 +223,47 @@
     if (this.hooks.onBuildType) this.hooks.onBuildType(key);
   };
 
+  /* Reparte los bonos de los edificios de mando entre las torres que cubren. */
+  Game.prototype.recomputeAuras = function () {
+    var auras = [];
+    var i, t;
+    for (i = 0; i < this.towers.length; i++) {
+      t = this.towers[i];
+      if (t.type.kind !== 'aura') continue;
+      var st = t.baseStats();
+      auras.push({ x: t.x, y: t.y, r2: Math.pow(st.range * this.perkMul.range, 2),
+                   damage: st.auraDamage, rate: st.auraRate });
+    }
+    for (i = 0; i < this.towers.length; i++) {
+      t = this.towers[i];
+      var dmg = 0, rate = 0;
+      if (t.type.kind !== 'aura') {
+        for (var a = 0; a < auras.length; a++) {
+          if (TD.dist2(auras[a].x, auras[a].y, t.x, t.y) > auras[a].r2) continue;
+          dmg += auras[a].damage;
+          rate += auras[a].rate;
+        }
+      }
+      t.auraDamage = dmg;
+      t.auraRate = rate;
+    }
+    this.auraStamp++;
+  };
+
+  /* Bonificación de oro de las casas de botín que cubren un punto. */
+  Game.prototype.lootBonusAt = function (x, y) {
+    var bonus = 0;
+    for (var i = 0; i < this.towers.length; i++) {
+      var t = this.towers[i];
+      if (t.type.kind !== 'loot') continue;
+      var st = t.stats();
+      if (TD.dist2(t.x, t.y, x, y) > st.range * st.range) continue;
+      bonus += st.lootBonus;
+      t.earned += 1;
+    }
+    return bonus;
+  };
+
   /* ------------------------------------------------------------------ */
   /* Forja: mejoras compradas con el oro de las bajas                    */
   /* ------------------------------------------------------------------ */
@@ -223,6 +281,7 @@
     this.perks[key] = level + 1;
     this.perkStamp++;
     this.perkMul = TD.perkMultipliers(this.perks, this.perkStamp);
+    this.recomputeAuras();
 
     if (perk.stat === 'lives') {
       this.lives += perk.step;
@@ -283,41 +342,85 @@
   };
 
   Game.prototype.completeWave = function () {
-    var bonus = 30 + this.wave * 8;
-    this.gold += bonus;
+    var bonus = Math.round((30 + this.wave * 8) * Math.max(1, TD.waveGoldMul(this.wave) * 0.3));
+    var income = this.collectIncome();
+    this.gold += bonus + income;
     this.score += 100 * this.wave;
-    this.banner = { text: 'Oleada superada  +' + bonus + ' oro', life: 2.0, good: true };
-    this.log('Oleada ' + this.wave + ' rechazada (+' + bonus + ' oro).', 'good');
+    this.bestWave = Math.max(this.bestWave || 0, this.wave);
 
-    if (this.wave >= TD.TOTAL_WAVES && !this.endless) {
-      this.finish(true);
-      return;
+    var text = 'Oleada superada  +' + TD.num(bonus) + ' oro';
+    if (income) text += '  ·  Rentas +' + TD.num(income);
+    this.banner = { text: text, life: 2.0, good: true };
+    this.log('Oleada ' + this.wave + ' rechazada (+' + TD.num(bonus + income) + ' oro).', 'good');
+
+    /* Cada diez oleadas, un hito con recompensa. La partida no termina nunca:
+       solo acaba cuando cae la fortaleza. */
+    if (this.wave % MILESTONE === 0) {
+      var prize = 250 * (this.wave / MILESTONE) * Math.max(1, TD.waveGoldMul(this.wave) * 0.25);
+      prize = Math.round(prize);
+      this.gold += prize;
+      this.banner = { text: '¡Hito: ' + this.wave + ' oleadas!  +' + TD.num(prize) + ' oro', life: 3.2, good: true };
+      this.log('Hito alcanzado: ' + this.wave + ' oleadas (+' + TD.num(prize) + ' oro).', 'good');
+      TD.Audio.victory();
     }
+
+    var unlocked = this.newUnlocks(this.wave + 2);
+    if (unlocked.length) {
+      this.log('Nueva construcción: ' + unlocked.map(function (t) { return t.name; }).join(', ') + '.', 'good');
+    }
+
     this.state = 'prep';
     this.prepTimer = PREP_NEXT;
     this.emit();
   };
 
-  Game.prototype.finish = function (victory) {
-    this.state = victory ? 'win' : 'over';
-    this.score += this.lives * 25 + this.kills * 5;
-    var best = 0;
-    try { best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; } catch (e) { best = 0; }
+  /* Renta de los edificios de economía al cerrar la oleada. */
+  Game.prototype.collectIncome = function () {
+    var total = 0;
+    for (var i = 0; i < this.towers.length; i++) {
+      var t = this.towers[i];
+      if (t.type.kind !== 'econ') continue;
+      var amount = t.stats().income;
+      total += amount;
+      t.earned += amount;
+      this.effects.text(t.x, t.y, '+' + TD.num(amount), '#f0cf87', 13, 1.2);
+    }
+    this.income = total;
+    return total;
+  };
+
+  /* Construcciones que se estrenan al llegar a esa oleada. */
+  Game.prototype.newUnlocks = function (wave) {
+    var out = [];
+    for (var i = 0; i < TD.TOWER_ORDER.length; i++) {
+      var t = TD.TOWER_TYPES[TD.TOWER_ORDER[i]];
+      if (t.unlockWave === wave) out.push(t);
+    }
+    return out;
+  };
+
+  /* No hay victoria: las oleadas no se acaban. La partida termina cuando la
+     fortaleza cae, y lo que queda es hasta dónde aguantaste. */
+  Game.prototype.finish = function () {
+    this.state = 'over';
+    this.score += this.kills * 5;
+    var best = 0, bestWave = 0;
+    try {
+      best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0;
+      bestWave = parseInt(localStorage.getItem(BEST_WAVE_KEY) || '0', 10) || 0;
+    } catch (e) { best = bestWave = 0; }
     if (this.score > best) {
       best = this.score;
       try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { /* sin almacenamiento */ }
     }
+    if (this.wave > bestWave) {
+      bestWave = this.wave;
+      try { localStorage.setItem(BEST_WAVE_KEY, String(bestWave)); } catch (e) { /* sin almacenamiento */ }
+    }
     this.best = best;
-    if (victory) TD.Audio.victory(); else TD.Audio.defeat();
-    if (this.hooks.onFinish) this.hooks.onFinish(victory, this);
-    this.emit();
-  };
-
-  Game.prototype.continueEndless = function () {
-    this.endless = true;
-    this.state = 'prep';
-    this.prepTimer = PREP_NEXT;
-    this.log('La fortaleza resiste… pero el Yermo envía más.', 'bad');
+    this.bestWaveEver = bestWave;
+    TD.Audio.defeat();
+    if (this.hooks.onFinish) this.hooks.onFinish(false, this);
     this.emit();
   };
 
@@ -342,7 +445,8 @@
   };
 
   Game.prototype.onEnemyKilled = function (enemy) {
-    var reward = Math.round(enemy.type.gold * this.perkMul.gold);
+    var reward = Math.round(enemy.type.gold * this.perkMul.gold *
+      TD.waveGoldMul(this.wave) * (1 + this.lootBonusAt(enemy.x, enemy.y)));
     this.gold += reward;
     this.killGold += reward;
     this.kills++;
@@ -370,7 +474,7 @@
     this.log(enemy.type.name + ' ha cruzado el portón (-' + enemy.type.leak + ').', 'bad');
     if (this.lives <= 0) {
       this.lives = 0;
-      this.finish(false);
+      this.finish();
     }
     this.emit();
   };
@@ -428,7 +532,7 @@
   };
 
   Game.prototype.step = function (dt) {
-    if (this.paused || this.state === 'menu' || this.state === 'over' || this.state === 'win') {
+    if (this.paused || this.state === 'menu' || this.state === 'over') {
       this.effects.update(dt);
       return;
     }
@@ -447,7 +551,7 @@
     return this.speed();
   };
   Game.prototype.togglePause = function () {
-    if (this.state === 'menu' || this.state === 'over' || this.state === 'win') return;
+    if (this.state === 'menu' || this.state === 'over') return;
     this.paused = !this.paused;
     this.emit();
     return this.paused;

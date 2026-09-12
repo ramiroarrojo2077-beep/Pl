@@ -1,11 +1,12 @@
 # Murallas de Rocanegra
 
-Tower defense medieval **en 3D**, con todos los modelos hechos en **Blender** por
-script, jugable en el navegador y empaquetado también como **APK de Android**.
+Tower defense medieval **en 3D**, con **100 construcciones** y **oleadas
+infinitas**. Todos los modelos están hechos en **Blender** por script, y el juego
+va en el navegador y como **APK de Android**.
 
-Las hordas del Yermo avanzan por el camino hacia la fortaleza. Levanta torres a
-los lados, funde el oro de las bajas en la **Forja** y aguanta **20 oleadas** (y
-después, todas las que puedas en el modo infinito).
+Las hordas del Yermo no dejan de llegar: no hay pantalla de victoria, solo hasta
+dónde aguantas. Levanta construcciones junto al camino, fúndelas con el oro de
+las bajas en la **Forja** y mira cuántas oleadas resiste Rocanegra.
 
 ![El asedio en curso](assets/screenshot.png)
 
@@ -22,7 +23,8 @@ Requisitos: WebGL 2 (cualquier navegador moderno; en Android, Chrome/WebView 56+
 
 | Acción | Teclado | Ratón / táctil |
 | --- | --- | --- |
-| Elegir torre | `1` – `5` | toca la tienda |
+| Elegir construcción | `1` – `9` | toca la tienda |
+| Cambiar de familia | `Q` / `E` | toca la pestaña |
 | Construir | — | toca una casilla libre |
 | Cancelar / deseleccionar | `Esc` | clic derecho |
 | Mejorar torre | `U` | botón del panel |
@@ -33,17 +35,36 @@ Requisitos: WebGL 2 (cualquier navegador moderno; en Android, Chrome/WebView 56+
 | Velocidad 1× / 2× / 3× | `F` | botón de velocidad |
 | Silenciar | `M` | botón 🔊 |
 
-## Torres
+## Las 100 construcciones
 
-| Torre | Coste | Daño | Notas |
-| --- | --- | --- | --- |
-| Torre de Arqueros | 70 | físico | Barata y rápida; a nivel 3 dispara dos flechas |
-| Ballesta de asedio | 150 | físico | Largo alcance; el virote atraviesa hasta 4 enemigos |
-| Torre de Escarcha | 120 | **mágico** | Daño en área y ralentización; ignora la armadura |
-| Catapulta | 200 | físico | Gran daño en área, **no alcanza a los voladores** |
-| Pira arcana | 140 | **mágico** | Llama continua que prende a los enemigos; corto alcance |
+Están repartidas en 13 familias. Dentro de cada familia hay varios **grados**
+(del Puesto de Arqueros a la Torre del Arquero Legendario), y cada construcción
+tiene además **tres niveles de mejora**. Se van desbloqueando según avanzan las
+oleadas, así que la armería crece contigo.
 
-Cada torre tiene tres niveles, y cada nivel cambia también su modelo 3D.
+| Familia | Nº | Qué hace |
+| --- | --- | --- |
+| 🏹 Arquería | 10 | Saetas rápidas y baratas; a nivel 3 disparan dos flechas |
+| 🎯 Balistas | 8 | Virote perforante de largo alcance que atraviesa varios enemigos |
+| 🪨 Asedio | 10 | Gran daño en área, pero **no alcanza a los voladores** |
+| ❄ Escarcha | 8 | Daño mágico en área que ralentiza a la horda |
+| 🔥 Fuego | 8 | Llamarada continua que prende a los enemigos |
+| ⚡ Tormenta | 8 | Descarga que salta entre varios enemigos perdiendo fuerza |
+| ☠ Ponzoña | 8 | Veneno en área: daño sostenido que ignora la armadura |
+| 👁 Precisión | 8 | Un solo disparo, muchísimo alcance y daño demoledor |
+| 🎇 Andanada | 7 | Dispara a varios enemigos a la vez en cada salva |
+| 🛡 Mando | 8 | No dispara: potencia daño y cadencia de las torres cercanas |
+| 💰 Economía | 8 | No dispara: rinde oro al terminar cada oleada |
+| 🌨 Campo helado | 5 | No dispara: ralentiza a todo el que entre en su círculo |
+| 🪙 Botín | 4 | No dispara: las bajas cercanas sueltan más oro |
+
+Los cuatro últimos grupos son construcciones **pasivas**: enseñan su radio de
+influencia en el tablero y no gastan turno de puntería. Una defensa que solo
+apila torres se queda corta enseguida; el truco está en mezclar daño, control,
+mando y economía.
+
+Las armas mágicas (escarcha, fuego, ponzoña y tormenta) ignoran la armadura;
+las físicas (arquería, balistas, asedio, precisión, andanada) la sufren.
 
 ## La Forja: mejoras pagadas con el oro de las bajas
 
@@ -61,11 +82,25 @@ la Forja, que multiplica lo que ya tienes en el tablero.
 El panel lleva la cuenta del oro fundido de las bajas, y la ficha de cada torre
 muestra el bono que le aporta la Forja.
 
+## Oleadas infinitas
+
+Las veinte primeras oleadas están escritas a mano; a partir de ahí la
+composición se genera sola y no se acaba nunca:
+
+- La vida de los enemigos crece de forma exponencial, y pasada la oleada 30 con
+  un empujón extra: tarde o temprano la horda se come cualquier defensa.
+- Cada cinco oleadas aparece un jefe (y más de uno cuando la cosa se pone seria).
+- Cada diez oleadas se alcanza un **hito** con una recompensa de oro.
+- El oro que sueltan los enemigos también sube con las oleadas: sin eso, los
+  grados altos serían inalcanzables.
+
+No hay victoria. La partida termina cuando cae la fortaleza, y lo que queda es
+el récord de oleadas.
+
 ## Enemigos
 
 Trasgos, lobos huargos, orcos, caballeros negros, ogros, guivernos, nigromantes
-y dos jefes: el **Señor de la Guerra** (oleada 10) y el **Dragón de Ceniza**
-(oleada 20).
+y dos jefes: el **Señor de la Guerra** y el **Dragón de Ceniza**.
 
 - **Armadura.** Resta daño a cada impacto *físico*. Los caballeros (armadura 10)
   casi ignoran a los arqueros, pero caen ante ballestas y catapultas.
@@ -89,8 +124,10 @@ jugar.
 
 ### Modelado (Blender)
 
-`blender/build_models.py` construye los 40 assets con primitivas y los exporta a
-un único `.glb`:
+`blender/build_models.py` construye los 125 assets con primitivas y los exporta a
+un único `.glb`. Las 100 construcciones salen de `blender/buildings.json`, que
+exporta el propio catálogo del juego: cuerpo, tejado, paleta y remate dependen de
+la familia y del grado, así que cada clave tiene su modelo:
 
 ```bash
 blender -b -P blender/build_models.py -- --out assets/models/rocanegra.glb
@@ -130,13 +167,15 @@ tools/three-entry.js    entrada que esbuild convierte en vendor/three.bundle.js
 tools/build_apk.sh      construcción del APK
 android/                manifiesto, Activity con WebView, icono y recursos
 vendor/three.bundle.js  three.js + GLTFLoader + bloom (empaquetado)
+tools/export_building_specs.js  catálogo -> blender/buildings.json
+js/buildings.js         catálogo de las 100 construcciones (13 familias)
 js/utils.js             constantes, matemáticas y recorrido de polilíneas
 js/audio.js             efectos de sonido sintetizados con WebAudio
 js/level.js             camino, casillas bloqueadas y textura del suelo
 js/enemies.js           bestiario y lógica de movimiento
-js/towers.js            torres, mejoras y puntería
+js/towers.js            puntería, disparo y efectos pasivos
 js/effects.js           proyectiles, partículas y rótulos
-js/waves.js             guion de las 20 oleadas y modo infinito
+js/waves.js             20 oleadas escritas a mano y generador infinito
 js/perks.js             la Forja
 js/render3d.js          escena 3D: paisaje, modelos, cámara y post-procesado
 js/game.js              motor: economía, oleadas y bucle

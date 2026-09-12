@@ -16,6 +16,7 @@ Una unidad de Blender = una casilla del tablero (48 px en el juego 2D original).
 """
 
 import bpy
+import json
 import math
 import sys
 import os
@@ -174,6 +175,15 @@ def M():
         'grass_dark': mat('grass_dark', '#38542a', 1.0),
         'cloud': mat('cloud', '#e9eef2', 1.0),
         'canvas_tent': mat('canvas_tent', '#8d7a55', 0.95),
+        'stone_pale': mat('stone_pale', '#c9c3b2', 0.9),
+        'stone_royal': mat('stone_royal', '#dcd6c4', 0.85),
+        'storm': mat('storm', '#3c4a6b', 0.8),
+        'storm_glow': mat('storm_glow', '#9fd8ff', 0.3, 0.0, '#5fb8ff', 2.4),
+        'venom': mat('venom', '#5c6b3a', 0.9),
+        'venom_glow': mat('venom_glow', '#a8e04a', 0.4, 0.0, '#7fd028', 2.2),
+        'thatch': mat('thatch', '#b69353', 0.98),
+        'wheat': mat('wheat', '#d8bb61', 0.95),
+        'copper': mat('copper', '#b87a3d', 0.35, 0.8),
     }
 
 
@@ -266,117 +276,277 @@ def shield(body, m, s, color='cloth_red'):
 # Torres
 # --------------------------------------------------------------------------
 
-def build_towers(m):
-    # --- Torre de arqueros -------------------------------------------------
-    for lvl in (1, 2, 3):
-        with asset('tower_archer_%d' % lvl) as g:
-            tower_base(g, m)
-            h = 0.5 + lvl * 0.09
-            cyl(g, m['stone'], 0.25, h, (0, 0, 0.16 + h / 2), verts=12)
-            cyl(g, m['stone_dark'], 0.27, 0.05, (0, 0, 0.16 + h), verts=12)
-            crenellations(g, m['stone'], 0.24, 0.22 + h, 8)
-            if lvl >= 2:
-                cone(g, m['roof_red'], 0.3, 0.0, 0.28, (0, 0, 0.42 + h), verts=12)
-            if lvl >= 3:
-                cyl(g, m['gold'], 0.28, 0.03, (0, 0, 0.18 + h), verts=12)
-            yaw = group(g.name + '__yaw', g, (0, 0, 0.2 + h))
-            archers = 2 if lvl >= 3 else 1
-            for i in range(archers):
-                off = (-0.09 + i * 0.18) if archers > 1 else 0
-                a = group('%s__archer%d' % (g.name, i), yaw, (off, 0, 0))
-                box(a, m['cloth_blue'], (0.12, 0.1, 0.18), (0, 0, 0.09))
-                ball(a, m['skin_pale'], 0.055, (0, 0, 0.21))
-                # arco apuntando en +Y (dirección de disparo)
-                cyl(a, m['wood_dark'], 0.075, 0.018,
-                    (0, 0.1, 0.13), (math.pi / 2, 0, 0), verts=10)
-                box(a, m['bone'], (0.012, 0.16, 0.012), (0, 0.14, 0.13))
+PALETTES = {
+    'stone': {'body': 'stone', 'trim': 'stone_dark', 'roof': 'roof_red', 'accent': 'metal'},
+    'wood': {'body': 'wood', 'trim': 'wood_dark', 'roof': 'roof_red', 'accent': 'metal'},
+    'ice': {'body': 'stone_pale', 'trim': 'roof_blue', 'roof': 'roof_blue', 'accent': 'ice'},
+    'ember': {'body': 'stone_dark', 'trim': 'dark', 'roof': 'fire', 'accent': 'fire_core'},
+    'storm': {'body': 'storm', 'trim': 'iron', 'roof': 'storm', 'accent': 'storm_glow'},
+    'venom': {'body': 'venom', 'trim': 'wood_dark', 'roof': 'venom', 'accent': 'venom_glow'},
+    'royal': {'body': 'stone_royal', 'trim': 'stone_dark', 'roof': 'roof_red', 'accent': 'gold'},
+    'farm': {'body': 'wood', 'trim': 'wood_dark', 'roof': 'thatch', 'accent': 'wheat'},
+}
 
-    # --- Ballesta de asedio ------------------------------------------------
-    for lvl in (1, 2, 3):
-        with asset('tower_ballista_%d' % lvl) as g:
-            tower_base(g, m)
-            for sx in (-1, 1):
-                for sy in (-1, 1):
-                    box(g, m['wood_dark'], (0.07, 0.07, 0.34),
-                        (sx * 0.22, sy * 0.22, 0.33))
-            box(g, m['wood'], (0.62, 0.62, 0.07), (0, 0, 0.53))
-            if lvl >= 2:
-                for sx in (-1, 1):
-                    box(g, m['wood'], (0.05, 0.5, 0.05), (sx * 0.28, 0, 0.6))
-            yaw = group(g.name + '__yaw', g, (0, 0, 0.57))
-            box(yaw, m['wood'], (0.14, 0.46, 0.09), (0, 0.02, 0.05))
-            box(yaw, m['wood_dark'], (0.52, 0.09, 0.05), (0, 0.12, 0.09))
-            for sx in (-1, 1):
-                box(yaw, m['wood_dark'], (0.2, 0.05, 0.04),
-                    (sx * 0.24, 0.16, 0.09), (0, 0, sx * 0.45))
-            box(yaw, m['metal'], (0.03, 0.36, 0.03), (0, 0.18, 0.12))
-            if lvl >= 3:
-                cyl(yaw, m['gold'], 0.06, 0.04, (0, 0.0, 0.13), verts=8)
-                box(yaw, m['metal'], (0.03, 0.36, 0.03), (0.06, 0.18, 0.12))
 
-    # --- Torre de escarcha -------------------------------------------------
-    for lvl in (1, 2, 3):
-        with asset('tower_frost_%d' % lvl) as g:
-            tower_base(g, m)
-            h = 0.46 + lvl * 0.07
-            cyl(g, m['stone'], 0.23, h, (0, 0, 0.16 + h / 2), verts=10)
-            cone(g, m['roof_blue'], 0.3, 0.0, 0.34 + lvl * 0.04,
-                 (0, 0, 0.33 + h + lvl * 0.02), verts=10)
-            yaw = group(g.name + '__yaw', g, (0, 0, 0.2 + h))
-            orb = group(g.name + '__orb', yaw, (0, 0, 0.02))
-            ball(orb, m['ice'], 0.09 + lvl * 0.015)
-            for i in range(2 + lvl):
-                a = TAU * i / (2 + lvl)
-                cone(orb, m['ice'], 0.035, 0.0, 0.1,
-                     (0.19 * math.cos(a), 0.19 * math.sin(a), 0), (0, 0, 0))
-            if lvl >= 3:
-                cyl(g, m['gold'], 0.25, 0.03, (0, 0, 0.17 + h), verts=10)
+def build_catalog(m, specs):
+    """Modela las 100 construcciones descritas en blender/buildings.json."""
+    for spec in specs:
+        with asset('b_' + spec['key']) as g:
+            build_one(g, m, spec)
 
-    # --- Catapulta ---------------------------------------------------------
-    for lvl in (1, 2, 3):
-        with asset('tower_catapult_%d' % lvl) as g:
-            tower_base(g, m)
-            yaw = group(g.name + '__yaw', g, (0, 0, 0.18))
-            box(yaw, m['wood'], (0.16, 0.62, 0.07), (-0.16, 0, 0.09))
-            box(yaw, m['wood'], (0.16, 0.62, 0.07), (0.16, 0, 0.09))
-            box(yaw, m['wood_dark'], (0.44, 0.1, 0.06), (0, -0.22, 0.09))
-            box(yaw, m['wood_dark'], (0.44, 0.1, 0.06), (0, 0.22, 0.09))
-            for sx in (-1, 1):
-                for sy in (-1, 1):
-                    cyl(yaw, m['wood_dark'], 0.09, 0.05,
-                        (sx * 0.2, sy * 0.2, 0.07), (0, math.pi / 2, 0), verts=8)
-            for sx in (-1, 1):
-                box(yaw, m['wood'], (0.05, 0.05, 0.24), (sx * 0.13, -0.02, 0.22),
-                    (sx * 0.0, sx * 0.25, 0))
-            arm = group(g.name + '__arm', yaw, (0, -0.02, 0.3))
-            box(arm, m['wood'], (0.07, 0.46, 0.06), (0, 0.2, 0))
-            cyl(arm, m['wood_dark'], 0.09, 0.06, (0, 0.42, 0.02),
-                (math.pi / 2, 0, 0), verts=8)
-            ball(arm, m['dark'], 0.09, (0, -0.16, 0))
-            if lvl >= 2:
-                box(yaw, m['metal'], (0.5, 0.06, 0.03), (0, 0.26, 0.13))
-            if lvl >= 3:
-                box(yaw, m['gold'], (0.5, 0.05, 0.03), (0, -0.26, 0.13))
 
-    # --- Pira arcana -------------------------------------------------------
-    for lvl in (1, 2, 3):
-        with asset('tower_pyre_%d' % lvl) as g:
-            tower_base(g, m)
-            h = 0.38 + lvl * 0.05
-            cyl(g, m['stone_dark'], 0.2, h, (0, 0, 0.16 + h / 2), verts=8)
-            cone(g, m['stone'], 0.16, 0.3, 0.16, (0, 0, 0.24 + h), verts=10)
-            yaw = group(g.name + '__yaw', g, (0, 0, 0.3 + h))
-            flame = group(g.name + '__flame', yaw, (0, 0, 0.05))
-            cone(flame, m['fire'], 0.2 + lvl * 0.02, 0.0, 0.34 + lvl * 0.05,
-                 (0, 0, 0.16), verts=10)
-            cone(flame, m['fire_core'], 0.1, 0.0, 0.2, (0, 0, 0.12), verts=8)
-            if lvl >= 2:
-                for i in range(4):
-                    a = TAU * i / 4
-                    box(g, m['fire_core'], (0.06, 0.06, 0.02),
-                        (0.33 * math.cos(a), 0.33 * math.sin(a), 0.17), (0, 0, a))
-            if lvl >= 3:
-                cyl(g, m['gold'], 0.22, 0.03, (0, 0, 0.2 + h), verts=8)
+def build_one(g, m, spec):
+    shape = spec['shape']
+    pal = PALETTES[shape['palette']]
+    body_mat = m[pal['body']]
+    trim_mat = m[pal['trim']]
+    roof_mat = m[pal['roof']]
+    accent = m[pal['accent']]
+    tier = spec['tier'] - 1
+    t = tier / max(1, spec['tiers'] - 1)          # 0..1 dentro de la familia
+
+    tower_base(g, m)
+    top = build_body(g, shape['body'], body_mat, trim_mat, accent, t, tier)
+    top = build_roof(g, shape['roof'], roof_mat, accent, top, t)
+    build_figure(g, m, shape['figure'], body_mat, accent, top, t)
+    tier_marks(g, m, tier, t)
+
+
+def build_body(g, kind, body, trim, accent, t, tier):
+    """Cuerpo del edificio; devuelve la altura de su coronación."""
+    if kind == 'round':
+        h = 0.5 + t * 0.75
+        cyl(g, body, 0.25 + t * 0.05, h, (0, 0, 0.16 + h / 2), verts=12)
+        cyl(g, trim, 0.28 + t * 0.05, 0.06, (0, 0, 0.16 + h), verts=12)
+        crenellations(g, body, 0.25 + t * 0.05, 0.22 + h, 8)
+        return 0.2 + h
+
+    if kind == 'tall':
+        h = 0.85 + t * 0.95
+        cyl(g, body, 0.2 + t * 0.03, h, (0, 0, 0.16 + h / 2), verts=10)
+        for i in range(1 + int(t * 3)):
+            cyl(g, trim, 0.23 + t * 0.03, 0.05, (0, 0, 0.3 + i * (h / (2 + t * 3))), verts=10)
+        return 0.16 + h
+
+    if kind == 'square':
+        h = 0.42 + t * 0.6
+        box(g, body, (0.46 + t * 0.1, 0.46 + t * 0.1, h), (0, 0, 0.16 + h / 2))
+        box(g, trim, (0.56 + t * 0.1, 0.56 + t * 0.1, 0.06), (0, 0, 0.16 + h))
+        return 0.18 + h
+
+    if kind == 'obelisk':
+        h = 0.75 + t * 0.9
+        cone(g, body, 0.26 + t * 0.04, 0.1, h, (0, 0, 0.16 + h / 2), verts=6)
+        for i in range(2 + int(t * 3)):
+            a = TAU * i / (2 + int(t * 3))
+            box(g, trim, (0.07, 0.07, 0.3 + t * 0.3),
+                (0.3 * math.cos(a), 0.3 * math.sin(a), 0.32), (0, 0, a))
+        return 0.16 + h
+
+    if kind == 'frame':
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                box(g, trim, (0.08, 0.08, 0.36 + t * 0.24),
+                    (sx * 0.22, sy * 0.22, 0.34 + t * 0.12))
+        top = 0.54 + t * 0.24
+        box(g, body, (0.64, 0.64, 0.08), (0, 0, top))
+        if t > 0.3:
+            for sx in (-1, 1):
+                box(g, body, (0.06, 0.52, 0.06), (sx * 0.3, 0, top + 0.08))
+        return top + 0.04
+
+    if kind == 'platform':
+        box(g, body, (0.66, 0.66, 0.1), (0, 0, 0.22))
+        box(g, trim, (0.7, 0.16, 0.06), (0, 0, 0.3))
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                cyl(g, trim, 0.09 + t * 0.02, 0.05,
+                    (sx * 0.24, sy * 0.26, 0.2), (0, math.pi / 2, 0), verts=8)
+        return 0.3
+
+    if kind == 'battery':
+        box(g, body, (0.72, 0.6, 0.12), (0, 0, 0.23))
+        for i in range(2 + int(t * 3)):
+            x = -0.26 + i * (0.52 / max(1, 1 + int(t * 3)))
+            box(g, trim, (0.1, 0.44, 0.1), (x, 0, 0.34))
+        return 0.36
+
+    if kind == 'hut':
+        h = 0.36 + t * 0.4
+        cyl(g, body, 0.3 + t * 0.04, h, (0, 0, 0.16 + h / 2), verts=9)
+        box(g, trim, (0.16, 0.04, 0.22), (0, -0.3, 0.28))
+        return 0.16 + h
+
+    if kind == 'house':
+        h = 0.4 + t * 0.35
+        box(g, body, (0.58, 0.48, h), (0, 0, 0.16 + h / 2))
+        box(g, trim, (0.14, 0.04, 0.24), (0, -0.25, 0.28))
+        if t > 0.4:
+            box(g, body, (0.3, 0.3, h * 0.7), (0.3, 0.22, 0.16 + h * 0.35))
+        return 0.16 + h
+
+    if kind == 'keep':
+        h = 0.5 + t * 0.5
+        box(g, body, (0.6, 0.6, h), (0, 0, 0.16 + h / 2))
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                cyl(g, body, 0.13 + t * 0.03, h + 0.12,
+                    (sx * 0.3, sy * 0.3, 0.16 + (h + 0.12) / 2), verts=8)
+        for i in range(8):
+            a = TAU * i / 8
+            box(g, trim, (0.12, 0.12, 0.12),
+                (0.3 * math.cos(a), 0.3 * math.sin(a), 0.22 + h), (0, 0, a))
+        return 0.2 + h
+
+    if kind == 'circle':
+        cyl(g, body, 0.42 + t * 0.06, 0.08, (0, 0, 0.2), verts=16)
+        cyl(g, trim, 0.3 + t * 0.05, 0.06, (0, 0, 0.25), verts=16)
+        for i in range(4 + int(t * 4)):
+            a = TAU * i / (4 + int(t * 4))
+            box(g, trim, (0.08, 0.08, 0.3 + t * 0.25),
+                (0.36 * math.cos(a), 0.36 * math.sin(a), 0.35), (0, 0, a))
+        return 0.3
+
+    return 0.3
+
+
+def build_roof(g, kind, roof, accent, top, t):
+    if kind == 'cone':
+        cone(g, roof, 0.34 + t * 0.06, 0.0, 0.3 + t * 0.22, (0, 0, top + 0.18 + t * 0.1), verts=12)
+        return top + 0.1
+    if kind == 'spire':
+        cone(g, roof, 0.3 + t * 0.05, 0.0, 0.5 + t * 0.5, (0, 0, top + 0.28 + t * 0.24), verts=10)
+        ball(g, accent, 0.06 + t * 0.03, (0, 0, top + 0.56 + t * 0.75))
+        return top + 0.06
+    if kind == 'dome':
+        ball(g, roof, 0.32 + t * 0.05, (0, 0, top), (1, 1, 0.62), seg=12, ring=7)
+        return top + 0.14
+    if kind == 'gable':
+        for sx in (-1, 1):
+            box(g, roof, (0.36, 0.56, 0.05), (sx * 0.15, 0, top + 0.12), (0, sx * 0.7, 0))
+        return top + 0.06
+    if kind == 'brazier':
+        cone(g, roof, 0.16, 0.32, 0.16, (0, 0, top + 0.08), verts=10)
+        return top + 0.14
+    if kind == 'flat':
+        return top + 0.04
+    return top
+
+
+def build_figure(g, m, kind, body, accent, top, t):
+    """Pieza superior: lo que apunta, gira o brilla."""
+    if kind == 'none':
+        return
+
+    if kind == 'archer':
+        yaw = group(g.name + '__yaw', g, (0, 0, top))
+        n = 1 + int(t * 2)
+        for i in range(n):
+            off = (i - (n - 1) / 2) * 0.17
+            a = group('%s__fig%d' % (g.name, i), yaw, (off, 0, 0))
+            box(a, m['cloth_blue'], (0.12, 0.1, 0.18), (0, 0, 0.09))
+            ball(a, m['skin_pale'], 0.055, (0, 0, 0.21))
+            cyl(a, m['wood_dark'], 0.08, 0.018, (0, 0.1, 0.14), (math.pi / 2, 0, 0), verts=10)
+            box(a, accent, (0.012, 0.18, 0.012), (0, 0.15, 0.14))
+        return
+
+    if kind == 'ballista':
+        yaw = group(g.name + '__yaw', g, (0, 0, top))
+        box(yaw, m['wood'], (0.14, 0.46, 0.09), (0, 0.02, 0.06))
+        box(yaw, m['wood_dark'], (0.52 + t * 0.12, 0.09, 0.05), (0, 0.12, 0.1))
+        for sx in (-1, 1):
+            box(yaw, m['wood_dark'], (0.2, 0.05, 0.04), (sx * 0.24, 0.16, 0.1), (0, 0, sx * 0.45))
+        for i in range(1 + int(t * 2)):
+            box(yaw, accent, (0.03, 0.36, 0.03), (i * 0.07 - t * 0.07, 0.18, 0.13))
+        return
+
+    if kind == 'catapult':
+        yaw = group(g.name + '__yaw', g, (0, 0, top))
+        box(yaw, m['wood'], (0.16, 0.6, 0.07), (-0.16, 0, 0.06))
+        box(yaw, m['wood'], (0.16, 0.6, 0.07), (0.16, 0, 0.06))
+        box(yaw, m['wood_dark'], (0.44, 0.1, 0.06), (0, -0.2, 0.06))
+        for sx in (-1, 1):
+            box(yaw, m['wood'], (0.05, 0.05, 0.26), (sx * 0.13, -0.02, 0.2), (0, sx * 0.22, 0))
+        arm = group(g.name + '__arm', yaw, (0, -0.02, 0.28))
+        box(arm, m['wood'], (0.07, 0.44 + t * 0.2, 0.06), (0, 0.2, 0))
+        cyl(arm, m['wood_dark'], 0.1, 0.06, (0, 0.4 + t * 0.2, 0.02), (math.pi / 2, 0, 0), verts=8)
+        ball(arm, m['dark'], 0.09 + t * 0.03, (0, -0.16, 0))
+        return
+
+    if kind == 'orb':
+        yaw = group(g.name + '__yaw', g, (0, 0, top + 0.12))
+        orb = group(g.name + '__orb', yaw, (0, 0, 0))
+        ball(orb, accent, 0.1 + t * 0.05)
+        for i in range(3 + int(t * 3)):
+            a = TAU * i / (3 + int(t * 3))
+            cone(orb, accent, 0.035, 0.0, 0.12 + t * 0.06,
+                 (0.2 * math.cos(a), 0.2 * math.sin(a), 0))
+        return
+
+    if kind == 'flame':
+        yaw = group(g.name + '__yaw', g, (0, 0, top))
+        flame = group(g.name + '__flame', yaw, (0, 0, 0.04))
+        cone(flame, m['fire'], 0.2 + t * 0.08, 0.0, 0.34 + t * 0.3, (0, 0, 0.18), verts=10)
+        cone(flame, m['fire_core'], 0.1 + t * 0.04, 0.0, 0.22 + t * 0.16, (0, 0, 0.14), verts=8)
+        return
+
+    if kind == 'cauldron':
+        yaw = group(g.name + '__yaw', g, (0, 0, top))
+        cyl(yaw, m['iron'], 0.2 + t * 0.05, 0.18, (0, 0, 0.09), verts=10)
+        cyl(yaw, accent, 0.17 + t * 0.05, 0.04, (0, 0, 0.19), verts=10)
+        for i in range(2 + int(t * 3)):
+            ball(yaw, accent, 0.04 + t * 0.02,
+                 (0.1 * math.cos(i * 2.2), 0.1 * math.sin(i * 2.2), 0.26 + i * 0.06))
+        return
+
+    if kind == 'battery':
+        yaw = group(g.name + '__yaw', g, (0, 0, top))
+        n = 2 + int(t * 3)
+        for i in range(n):
+            x = (i - (n - 1) / 2) * 0.2
+            box(yaw, m['wood'], (0.1, 0.4, 0.08), (x, 0.04, 0.05))
+            box(yaw, accent, (0.03, 0.3, 0.03), (x, 0.16, 0.1))
+        return
+
+    if kind == 'banner':
+        box(g, m['wood_dark'], (0.05, 0.05, 0.6 + t * 0.5), (0, 0, top + 0.3 + t * 0.25))
+        box(g, m['cloth_red'], (0.02, 0.26 + t * 0.1, 0.3 + t * 0.12),
+            (0, 0.14 + t * 0.05, top + 0.42 + t * 0.4))
+        ball(g, accent, 0.05, (0, 0, top + 0.62 + t * 0.52))
+        for i in range(int(t * 4)):
+            a = TAU * i / max(1, int(t * 4))
+            box(g, m['cloth_red'], (0.02, 0.14, 0.16),
+                (0.28 * math.cos(a), 0.28 * math.sin(a), top - 0.1), (0, 0, a))
+        return
+
+    if kind == 'runes':
+        yaw = group(g.name + '__yaw', g, (0, 0, top))
+        for i in range(3 + int(t * 4)):
+            a = TAU * i / (3 + int(t * 4))
+            box(yaw, accent, (0.07, 0.07, 0.03),
+                (0.3 * math.cos(a), 0.3 * math.sin(a), 0.02), (0, 0, a))
+        ball(yaw, accent, 0.08 + t * 0.04, (0, 0, 0.12))
+        return
+
+    if kind == 'coin':
+        yaw = group(g.name + '__yaw', g, (0, 0, top + 0.1))
+        for i in range(2 + int(t * 3)):
+            cyl(yaw, m['gold'], 0.1 - i * 0.012, 0.03, (0, 0, i * 0.045), verts=12)
+        return
+
+
+def tier_marks(g, m, tier, t):
+    """Señales del grado: aros dorados en la base y banderines a partir de la mitad."""
+    if tier >= 2:
+        cyl(g, m['gold'] if tier >= 5 else m['metal'], 0.3, 0.025, (0, 0, 0.2), verts=12)
+    if tier >= 4:
+        for sx in (-1, 1):
+            box(g, m['wood_dark'], (0.03, 0.03, 0.3), (sx * 0.3, -0.26, 0.32))
+            box(g, m['cloth_red'], (0.015, 0.12, 0.14), (sx * 0.3, -0.2, 0.42))
+    if tier >= 7:
+        for i in range(4):
+            a = TAU * i / 4 + 0.4
+            ball(g, m['gold'], 0.035, (0.3 * math.cos(a), 0.3 * math.sin(a), 0.24))
 
 
 # --------------------------------------------------------------------------
@@ -677,14 +847,14 @@ def render_preview(path):
     """Hoja de contactos de todos los assets, para revisar el modelado."""
     from mathutils import Vector
     scene = bpy.context.scene
-    center = Vector((12.0, -10.5, 1.0))
-    eye = center + Vector((9.0, -20.0, 17.0))
+    center = Vector((22.0, -21.0, 1.0))
+    eye = center + Vector((14.0, -30.0, 26.0))
     bpy.ops.object.camera_add(location=eye)
     cam = bpy.context.object
     cam.rotation_euler = (center - eye).to_track_quat('-Z', 'Y').to_euler()
     scene.camera = cam
     cam.data.type = 'ORTHO'
-    cam.data.ortho_scale = 34.0
+    cam.data.ortho_scale = 56.0
 
     bpy.ops.object.light_add(type='SUN', location=(6, -8, 12))
     sun = bpy.context.object
@@ -695,7 +865,7 @@ def render_preview(path):
     fill.data.energy = 300
     fill.data.size = 12
 
-    bpy.ops.mesh.primitive_plane_add(size=120, location=(12, -10.5, -0.01))
+    bpy.ops.mesh.primitive_plane_add(size=220, location=(22, -21, -0.01))
     bpy.context.object.data.materials.append(mat('preview_floor', '#41602c', 1.0))
 
     world = bpy.data.worlds['World'] if 'World' in bpy.data.worlds else bpy.data.worlds.new('World')
@@ -777,7 +947,7 @@ def render_icon(path):
 
 def layout_assets():
     """Reparte los assets en una rejilla para poder abrirlos en Blender."""
-    per_row = 7
+    per_row = 12
     for i, g in enumerate(ASSETS):
         g.location = ((i % per_row) * 4.0, -(i // per_row) * 4.2, 0)
 
@@ -791,7 +961,11 @@ def main():
 
     clear_scene()
     m = M()
-    build_towers(m)
+
+    specs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'buildings.json')
+    with open(specs_path, 'r', encoding='utf-8') as fh:
+        specs = json.load(fh)
+    build_catalog(m, specs)
     build_enemies(m)
     build_props(m)
     build_environment(m)

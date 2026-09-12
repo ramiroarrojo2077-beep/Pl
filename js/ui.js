@@ -544,7 +544,7 @@
     li.textContent = msg;
     if (cls) li.className = cls;
     this.el.log.insertBefore(li, this.el.log.firstChild);
-    while (this.el.log.children.length > 8) this.el.log.removeChild(this.el.log.lastChild);
+    while (this.el.log.children.length > 6) this.el.log.removeChild(this.el.log.lastChild);
   };
 
   UI.prototype.hideOverlay = function () { this.el.overlay.hidden = true; };

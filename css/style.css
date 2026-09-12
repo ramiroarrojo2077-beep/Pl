@@ -247,7 +247,7 @@ canvas#game.building { cursor: copy; }
 .nw-boss { border-color: var(--blood-hi); box-shadow: 0 0 10px rgba(184,57,47,.4); }
 
 /* ---------- Log ---------- */
-.log { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.35; max-height: 132px; overflow: hidden; }
+.log { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.35; }
 .log li { padding: 3px 0; border-bottom: 1px dotted rgba(255,255,255,.07); color: var(--parchment-dim); }
 .log li.good { color: var(--gold-soft); }
 .log li.bad { color: #e08a80; }
@@ -479,3 +479,20 @@ canvas#game {
 .card.locked .card-cost { color: var(--parchment-dim); }
 
 .nw-new { border-color: var(--gold) !important; color: var(--gold-soft); }
+
+/* ---------- Vertical: el tablero manda y el panel va debajo ---------- */
+@media (max-aspect-ratio: 1/1) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  canvas#game { aspect-ratio: 3 / 4; }
+  .panel { flex-direction: row; flex-wrap: wrap; }
+  .panel .block { flex: 1 1 100%; }
+  .fam-list { max-height: 46vh; }
+  .stage-bar { justify-content: center; }
+  .stage-bar .btn { flex: 1 1 auto; }
+  .wave-timer { flex: 1 1 100%; text-align: center; }
+}
+
+@media (max-aspect-ratio: 1/1) and (min-width: 620px) {
+  canvas#game { aspect-ratio: 4 / 5; }
+  .panel .block { flex: 1 1 46%; }
+}

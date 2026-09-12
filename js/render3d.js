@@ -100,7 +100,7 @@
     /* Sol bajo de media tarde: sombras largas y luz cálida. */
     var sun = new THREE.DirectionalLight(0xffe9c2, 2.7);
     sun.position.set(TD.GRID_W * 1.3, 11.5, -3.5);
-    sun.target.position.copy(this.camTarget);
+    sun.target.position.set(TD.GRID_W / 2, 0, TD.GRID_H / 2);
     sun.castShadow = true;
     var shadowSize = this.quality === 'high' ? 2048 : 1024;
     sun.shadow.mapSize.set(shadowSize, shadowSize);
@@ -482,11 +482,27 @@
     this.fitCamera();
   };
 
-  /* Coloca la cámara a la distancia mínima que deja todo el tablero a la vista. */
+  /* Coloca la cámara a la distancia mínima que deja todo el tablero a la vista.
+   *
+   * En vertical la escena gira un cuarto de vuelta: el lado largo del tablero
+   * (20 casillas) cae por la pantalla y la fortaleza queda abajo, junto al
+   * jugador, con la horda entrando por arriba.
+   */
   Renderer.prototype.fitCamera = function () {
     var THREE = window.THREE;
-    var pitch = THREE.MathUtils.degToRad(this.camera.aspect < 1 ? 46 : 36);
-    var dir = new THREE.Vector3(0, Math.sin(pitch), Math.cos(pitch));
+    var portrait = this.camera.aspect < 1;
+    this.portrait = portrait;
+
+    var pitch = THREE.MathUtils.degToRad(portrait ? 48 : 36);
+    var yaw = portrait ? Math.PI / 2 : 0;
+    var dirH = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+    var dir = new THREE.Vector3(dirH.x * Math.cos(pitch), Math.sin(pitch), dirH.z * Math.cos(pitch));
+
+    /* El objetivo se corre por detrás del tablero para dejarlo en la mitad
+       baja del encuadre y que arriba entre el paisaje. */
+    this.camTarget.set(TD.GRID_W / 2, 0, TD.GRID_H / 2)
+      .addScaledVector(dirH, portrait ? -2.6 : -4.2);
+
     var pts = [];
     [0.1, TD.GRID_W - 0.1].forEach(function (x) {
       [0.1, TD.GRID_H - 0.1].forEach(function (z) {
@@ -510,8 +526,9 @@
       });
       if (fits) { best = mid; hi = mid; } else { lo = mid; }
     }
-    /* Un poco más atrás de lo justo: así entra el horizonte en el plano. */
-    cam.position.copy(target).addScaledVector(dir, best * 1.14);
+    /* Un poco más atrás de lo justo: así entra el horizonte en el plano. En
+       vertical se aprieta más, que la pantalla da menos de sí. */
+    cam.position.copy(target).addScaledVector(dir, best * (portrait ? 1.05 : 1.14));
     cam.lookAt(target);
     cam.updateProjectionMatrix();
     this.camHome = cam.position.clone();

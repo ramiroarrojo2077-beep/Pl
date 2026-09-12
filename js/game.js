@@ -97,7 +97,11 @@
       if (ev.button === 2) return;
       TD.Audio.resume();
       var hit = self.view.ready ? self.view.pick(ev.clientX, ev.clientY) : null;
-      if (!hit) return;
+      if (!hit) {
+        /* Tocar fuera del tablero suelta lo que hubiera en la mano. */
+        self.clearSelection();
+        return;
+      }
       self.hover = hit;
       self.click(hit.col, hit.row);
     });
@@ -107,6 +111,14 @@
       self.setBuildType(null);
       self.select(null);
     });
+  };
+
+  /* Suelta a la vez el edificio elegido y la torre seleccionada. */
+  Game.prototype.clearSelection = function () {
+    if (!this.buildType && !this.selected) return false;
+    this.setBuildType(null);
+    this.select(null);
+    return true;
   };
 
   Game.prototype.click = function (col, row) {

@@ -13,6 +13,7 @@
       nextWave: $('next-wave'), log: $('log'), overlay: $('overlay'),
       btnWave: $('btn-wave'), btnPause: $('btn-pause'), btnSpeed: $('btn-speed'),
       btnSound: $('btn-sound'), btnRestart: $('btn-restart'), waveTimer: $('wave-timer'),
+      btnCancel: $('btn-cancel'),
       banner: $('banner'), hurt: $('hurt'), pauseVeil: $('pause-veil')
     };
     this.cache = {};
@@ -241,6 +242,7 @@
       self.el.btnSound.textContent = muted ? '🔇' : '🔊';
       self.el.btnSound.classList.toggle('btn-on', !muted);
     });
+    this.el.btnCancel.addEventListener('click', function () { g.clearSelection(); });
     this.el.btnRestart.addEventListener('click', function () { self.restart(); });
   };
 
@@ -262,7 +264,7 @@
         return;
       }
       switch (k) {
-        case 'escape': g.setBuildType(null); g.select(null); break;
+        case 'escape': g.clearSelection(); break;
         case 'u': g.upgradeSelected(); break;
         case 'x': g.sellSelected(); break;
         case 't': g.cycleTargetMode(); break;
@@ -350,6 +352,13 @@
     if (this.cache.timer !== timer) {
       this.cache.timer = timer;
       this.el.waveTimer.innerHTML = timer;
+    }
+
+    /* El botón de cancelar solo existe mientras haya algo en la mano. */
+    var busy = !!(g.buildType || g.selected);
+    if (this.cache.busy !== busy) {
+      this.cache.busy = busy;
+      this.el.btnCancel.hidden = !busy;
     }
 
     var pauseLabel = g.paused ? 'Reanudar' : 'Pausa';

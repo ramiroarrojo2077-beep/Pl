@@ -480,6 +480,19 @@ canvas#game {
 
 .nw-new { border-color: var(--gold) !important; color: var(--gold-soft); }
 
+/* Cancelar: aparece en la barra solo cuando hay algo elegido. */
+.btn-cancel {
+  border-color: #6d221d;
+  background: linear-gradient(180deg, #a5352c, #6d221d);
+  color: #f6e6df;
+  animation: cancelIn .16s ease;
+}
+.btn-cancel[hidden] { display: none; }
+@keyframes cancelIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
 /* ---------- Vertical: el tablero manda y el panel va debajo ---------- */
 @media (max-aspect-ratio: 1/1) {
   .layout { grid-template-columns: minmax(0, 1fr); }

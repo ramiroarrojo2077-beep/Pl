@@ -102,11 +102,13 @@
   /* ------------------------------------------------------------------ */
 
   function renderTerrain(level) {
+    /* En escritorio se pinta al triple: el suelo se ve de cerca al ampliar. */
+    var k = (window.devicePixelRatio > 1 && window.innerWidth < 900) ? 2 : 3;
     var cv = document.createElement('canvas');
-    cv.width = TD.W * 2;
-    cv.height = TD.H * 2;
+    cv.width = TD.W * k;
+    cv.height = TD.H * k;
     var ctx = cv.getContext('2d');
-    ctx.scale(2, 2);
+    ctx.scale(k, k);
     var rnd = TD.rng(777);
 
     drawGrass(ctx, rnd);

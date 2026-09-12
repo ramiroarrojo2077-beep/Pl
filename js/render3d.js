@@ -68,7 +68,10 @@
       if (m && m.emissiveIntensity > 0 && m.emissive && m.emissive.getHex() !== 0) {
         o.castShadow = false;
       }
-      if (m) m.side = THREE.FrontSide;
+      if (m) {
+        m.side = THREE.FrontSide;
+        if (m.isMeshStandardMaterial) m.envMapIntensity = 0.55;
+      }
     });
   };
 
@@ -102,16 +105,16 @@
     sun.position.set(TD.GRID_W * 1.3, 11.5, -3.5);
     sun.target.position.set(TD.GRID_W / 2, 0, TD.GRID_H / 2);
     sun.castShadow = true;
-    var shadowSize = this.quality === 'high' ? 2048 : 1024;
+    var shadowSize = this.quality === 'high' ? 2560 : 1280;
     sun.shadow.mapSize.set(shadowSize, shadowSize);
-    sun.shadow.camera.left = -13;
-    sun.shadow.camera.right = 13;
-    sun.shadow.camera.top = 13;
-    sun.shadow.camera.bottom = -13;
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 44;
-    sun.shadow.bias = -0.0012;
-    sun.shadow.normalBias = 0.02;
+    sun.shadow.camera.left = -12;
+    sun.shadow.camera.right = 12;
+    sun.shadow.camera.top = 12;
+    sun.shadow.camera.bottom = -12;
+    sun.shadow.camera.near = 2;
+    sun.shadow.camera.far = 42;
+    sun.shadow.bias = -0.0006;
+    sun.shadow.normalBias = 0.022;
     scene.add(sun);
     scene.add(sun.target);
 
@@ -132,7 +135,7 @@
 
     var tex = new THREE.CanvasTexture(level.bg);
     tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+    tex.anisotropy = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
     tex.needsUpdate = true;
 
     var ground = new THREE.Mesh(
@@ -191,6 +194,37 @@
     sky.position.set(TD.GRID_W / 2, 0, TD.GRID_H / 2);
     sky.renderOrder = -1;
     this.scene.add(sky);
+    this.sky = sky;
+
+    /* Disco solar y su halo, en la dirección de la luz principal. */
+    var dir = new THREE.Vector3(1.3, 0.55, -0.32).normalize().multiplyScalar(170);
+    var disc = new THREE.Mesh(
+      new THREE.SphereGeometry(7, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0xfff4d0, fog: false })
+    );
+    disc.position.copy(dir).add(sky.position);
+    this.scene.add(disc);
+    var halo = new THREE.Mesh(
+      new THREE.SphereGeometry(20, 16, 12),
+      new THREE.MeshBasicMaterial({
+        color: 0xffe0a0, transparent: true, opacity: 0.18,
+        blending: THREE.AdditiveBlending, depthWrite: false, fog: false
+      })
+    );
+    halo.position.copy(disc.position);
+    this.scene.add(halo);
+
+    /* El propio cielo hace de mapa de entorno: metales y hielo dejan de
+       verse planos sin coste de luces extra. */
+    try {
+      var pmrem = new THREE.PMREMGenerator(this.renderer);
+      var envScene = new THREE.Scene();
+      var envSky = sky.clone();
+      envSky.position.set(0, 0, 0);
+      envScene.add(envSky);
+      this.scene.environment = pmrem.fromScene(envScene, 0.03).texture;
+      pmrem.dispose();
+    } catch (e) { /* sin entorno: el juego sigue igual */ }
   };
 
   /* Textura de hierba para el terreno que rodea al tablero. */
@@ -330,11 +364,82 @@
     var THREE = window.THREE;
     var FX = window.PostFX;
     var size = new THREE.Vector2(960, 624);
-    this.composer = new FX.EffectComposer(this.renderer);
+    /* Destino multimuestreado: el bloom deja de comerse el antialias. */
+    var rt = new THREE.WebGLRenderTarget(960, 624, {
+      type: THREE.HalfFloatType, samples: 4
+    });
+    this.composer = new FX.EffectComposer(this.renderer, rt);
     this.composer.addPass(new FX.RenderPass(this.scene, this.camera));
     this.bloom = new FX.UnrealBloomPass(size, 0.28, 0.6, 0.9);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new FX.OutputPass());
+  };
+
+  /* Detalle del suelo: matas de hierba y china en las casillas libres.
+     Van en dos mallas instanciadas, así que cuestan dos llamadas de dibujo. */
+  Renderer.prototype.buildGroundDetail = function () {
+    var THREE = window.THREE;
+    var level = this.game.level;
+    var rnd = TD.rng(8080);
+
+    var free = [];
+    for (var r = 0; r < TD.GRID_H; r++) {
+      for (var c = 0; c < TD.GRID_W; c++) {
+        if (level.blocked[level.idx(c, r)] === TD.BLOCK.FREE) free.push([c, r]);
+      }
+    }
+    if (!free.length) return;
+
+    var tuftCount = this.quality === 'high' ? free.length * 7 : free.length * 3;
+    var blade = new THREE.ConeGeometry(0.035, 0.2, 3, 1, true);
+    blade.translate(0, 0.1, 0);
+    var tufts = new THREE.InstancedMesh(
+      blade,
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, side: THREE.DoubleSide, envMapIntensity: 0.15 }),
+      tuftCount
+    );
+    var stoneCount = Math.round(free.length * 0.5);
+    var stones = new THREE.InstancedMesh(
+      new THREE.IcosahedronGeometry(0.07, 0),
+      new THREE.MeshStandardMaterial({ color: 0x8d8778, roughness: 0.95 }),
+      stoneCount
+    );
+    stones.castShadow = true;
+    stones.receiveShadow = true;
+
+    var m = new THREE.Matrix4();
+    var q = new THREE.Quaternion();
+    var pos = new THREE.Vector3();
+    var scl = new THREE.Vector3();
+    var col = new THREE.Color();
+    var i, tile;
+
+    for (i = 0; i < tuftCount; i++) {
+      tile = free[Math.floor(rnd() * free.length)];
+      pos.set(tile[0] + 0.12 + rnd() * 0.76, 0, tile[1] + 0.12 + rnd() * 0.76);
+      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rnd() * TAU);
+      var h = 0.5 + rnd() * 0.7;
+      scl.set(0.9 + rnd() * 0.7, h, 0.9 + rnd() * 0.7);
+      m.compose(pos, q, scl);
+      tufts.setMatrixAt(i, m);
+      col.setHSL(0.23 + rnd() * 0.07, 0.42 + rnd() * 0.22, 0.17 + rnd() * 0.12);
+      tufts.setColorAt(i, col);
+    }
+    for (i = 0; i < stoneCount; i++) {
+      tile = free[Math.floor(rnd() * free.length)];
+      pos.set(tile[0] + 0.15 + rnd() * 0.7, 0.02, tile[1] + 0.15 + rnd() * 0.7);
+      q.setFromAxisAngle(new THREE.Vector3(rnd(), rnd(), rnd()).normalize(), rnd() * TAU);
+      scl.setScalar(0.5 + rnd() * 0.9);
+      m.compose(pos, q, scl);
+      stones.setMatrixAt(i, m);
+    }
+    tufts.instanceMatrix.needsUpdate = true;
+    if (tufts.instanceColor) tufts.instanceColor.needsUpdate = true;
+    stones.instanceMatrix.needsUpdate = true;
+    tufts.frustumCulled = false;
+    stones.frustumCulled = false;
+    this.scene.add(tufts);
+    this.scene.add(stones);
   };
 
   Renderer.prototype.buildHelpers = function () {
@@ -447,6 +552,7 @@
 
     /* El paisaje de fondo también necesita los modelos ya cargados. */
     this.buildWorld();
+    this.buildGroundDetail();
 
     var castle = this.models.prop_castle.clone(true);
     castle.position.set(18.62, 0, TD.GRID_H / 2);
@@ -501,7 +607,7 @@
     /* El objetivo se corre por detrás del tablero para dejarlo en la mitad
        baja del encuadre y que arriba entre el paisaje. */
     this.camTarget.set(TD.GRID_W / 2, 0, TD.GRID_H / 2)
-      .addScaledVector(dirH, portrait ? -2.6 : -4.2);
+      .addScaledVector(dirH, portrait ? -1.4 : -2.6);
 
     var pts = [];
     [0.1, TD.GRID_W - 0.1].forEach(function (x) {
@@ -509,6 +615,13 @@
         pts.push(new THREE.Vector3(x, 0, z));
         pts.push(new THREE.Vector3(x, 1.5, z));
       });
+    });
+    /* La fortaleza sobresale del tablero y, en vertical, queda en primer
+       plano: se añade su volumen al encuadre para que no la corte el borde. */
+    var castleX = TD.GRID_W + (portrait ? 0.7 : 0.2);
+    [4.2, TD.GRID_H - 4.2].forEach(function (z) {
+      pts.push(new THREE.Vector3(castleX, 3.6, z));
+      pts.push(new THREE.Vector3(castleX, 0, z));
     });
 
     var cam = this.camera;
@@ -522,13 +635,13 @@
       cam.updateProjectionMatrix();
       var fits = pts.every(function (p) {
         var v = p.clone().project(cam);
-        return Math.abs(v.x) < 0.965 && Math.abs(v.y) < 0.95 && v.z < 1;
+        return Math.abs(v.x) < 0.995 && Math.abs(v.y) < 0.99 && v.z < 1;
       });
       if (fits) { best = mid; hi = mid; } else { lo = mid; }
     }
     /* Un poco más atrás de lo justo: así entra el horizonte en el plano. En
        vertical se aprieta más, que la pantalla da menos de sí. */
-    cam.position.copy(target).addScaledVector(dir, best * (portrait ? 1.05 : 1.14));
+    cam.position.copy(target).addScaledVector(dir, best * (portrait ? 1.0 : 1.04));
     cam.lookAt(target);
     cam.updateProjectionMatrix();
     this.camHome = cam.position.clone();
@@ -583,7 +696,7 @@
     return found;
   }
 
-  var TOWER_SCALE = 1.24;
+  var TOWER_SCALE = 1.42;
 
   Renderer.prototype.towerModelName = function (tower) {
     return tower.type.model;

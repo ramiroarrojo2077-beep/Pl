@@ -11,39 +11,39 @@
   var TYPES = {
     goblin: {
       name: 'Trasgo', hp: 40, speed: 1.9, armor: 0, gold: 10, leak: 1, radius: 13,
-      color: '#7aa33f', modelScale: 1.55
+      color: '#7aa33f', modelScale: 1.92
     },
     wolf: {
       name: 'Lobo huargo', hp: 34, speed: 3.2, armor: 0, gold: 9, leak: 1, radius: 14,
-      color: '#8a8f96', modelScale: 1.55
+      color: '#8a8f96', modelScale: 1.92
     },
     orc: {
       name: 'Orco', hp: 130, speed: 1.5, armor: 3, gold: 17, leak: 1, radius: 16,
-      color: '#4f7a3a', modelScale: 1.5
+      color: '#4f7a3a', modelScale: 1.86
     },
     knight: {
       name: 'Caballero negro', hp: 230, speed: 1.35, armor: 10, gold: 26, leak: 1, radius: 16,
-      color: '#8d93a1', modelScale: 1.5
+      color: '#8d93a1', modelScale: 1.86
     },
     ogre: {
       name: 'Ogro', hp: 560, speed: 1.0, armor: 6, gold: 48, leak: 3, radius: 22,
-      color: '#9c7a4e', modelScale: 1.35
+      color: '#9c7a4e', modelScale: 1.67
     },
     wyvern: {
       name: 'Guiverno', hp: 110, speed: 1.8, armor: 1, gold: 20, leak: 1, radius: 16,
-      flying: true, color: '#7b5aa8', modelScale: 1.5
+      flying: true, color: '#7b5aa8', modelScale: 1.86
     },
     necromancer: {
       name: 'Nigromante', hp: 200, speed: 1.25, armor: 2, gold: 30, leak: 2, radius: 16,
-      color: '#6a4a86', heal: { amount: 30, radius: 95, every: 2.1 }, modelScale: 1.4
+      color: '#6a4a86', heal: { amount: 30, radius: 95, every: 2.1 }, modelScale: 1.74
     },
     warlord: {
       name: 'Señor de la Guerra', hp: 2800, speed: 0.95, armor: 8, gold: 280, leak: 6,
-      radius: 28, boss: true, color: '#b23a2c', modelScale: 1.25
+      radius: 28, boss: true, color: '#b23a2c', modelScale: 1.55
     },
     dragon: {
       name: 'Dragón de Ceniza', hp: 4000, speed: 0.85, armor: 7, gold: 350, leak: 8,
-      radius: 34, flying: true, boss: true, color: '#c0462c', modelScale: 1.15
+      radius: 34, flying: true, boss: true, color: '#c0462c', modelScale: 1.43
     }
   };
 

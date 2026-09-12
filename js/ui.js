@@ -1,4 +1,4 @@
-/* Panel lateral, tienda, atajos de teclado y superposiciones. */
+/* Panel lateral, tienda, Forja, atajos de teclado y superposiciones. */
 (function (TD) {
   'use strict';
 
@@ -9,16 +9,32 @@
     this.el = {
       gold: $('stat-gold'), lives: $('stat-lives'), wave: $('stat-wave'), score: $('stat-score'),
       shop: $('shop'), selection: $('selection'), selectionBlock: $('selection-block'),
+      forge: $('forge'), killGold: $('kill-gold'),
       nextWave: $('next-wave'), log: $('log'), overlay: $('overlay'),
       btnWave: $('btn-wave'), btnPause: $('btn-pause'), btnSpeed: $('btn-speed'),
-      btnSound: $('btn-sound'), btnRestart: $('btn-restart'), waveTimer: $('wave-timer')
+      btnSound: $('btn-sound'), btnRestart: $('btn-restart'), waveTimer: $('wave-timer'),
+      banner: $('banner'), hurt: $('hurt'), pauseVeil: $('pause-veil')
     };
     this.cache = {};
+    this.bannerText = document.createElement('span');
+    this.el.banner.appendChild(this.bannerText);
+
     this.buildShop();
+    this.buildForge();
     this.bindButtons();
     this.bindKeys();
     this.renderNextWave();
   }
+
+  /* Icono renderizado con el propio modelo 3D. */
+  UI.prototype.iconFor = function (modelName) {
+    var img = document.createElement('img');
+    img.className = 'icon3d';
+    img.alt = '';
+    var url = this.game.view.icon(modelName, 96);
+    if (url) img.src = url;
+    return img;
+  };
 
   /* ------------------------------------------------------------------ */
   /* Tienda                                                              */
@@ -34,11 +50,7 @@
       card.className = 'card';
       card.type = 'button';
       card.dataset.key = key;
-
-      var icon = TD.towerIcon(key, 0, 44);
-      icon.style.width = '44px';
-      icon.style.height = '44px';
-      card.appendChild(icon);
+      card.appendChild(self.iconFor(TD.towerModel(key, 0)));
 
       var info = document.createElement('div');
       info.innerHTML = '<div class="card-name"><span class="card-key">' + type.hotkey + '</span>' +
@@ -66,6 +78,54 @@
       card.classList.toggle('selected', g.buildType === key);
       card.classList.toggle('poor', g.gold < TD.TOWER_TYPES[key].cost);
     }
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* Forja                                                               */
+  /* ------------------------------------------------------------------ */
+
+  UI.prototype.buildForge = function () {
+    var self = this;
+    this.el.forge.innerHTML = '';
+    this.perkButtons = {};
+    TD.PERKS.forEach(function (perk) {
+      var btn = document.createElement('button');
+      btn.className = 'perk';
+      btn.type = 'button';
+      btn.innerHTML =
+        '<span class="perk-ico">' + perk.icon + '</span>' +
+        '<span><span class="perk-name">' + perk.name +
+        '<span class="pips"></span></span>' +
+        '<span class="perk-desc">' + perk.desc + '</span></span>' +
+        '<span class="perk-cost"></span>';
+      btn.addEventListener('click', function () {
+        TD.Audio.resume();
+        self.game.buyPerk(perk.key);
+        self.refreshForge();
+      });
+      self.el.forge.appendChild(btn);
+      self.perkButtons[perk.key] = btn;
+    });
+    this.refreshForge();
+  };
+
+  UI.prototype.refreshForge = function () {
+    var g = this.game;
+    TD.PERKS.forEach(function (perk) {
+      var btn = this.perkButtons[perk.key];
+      var level = g.perkLevel(perk.key);
+      var cost = TD.perkCost(perk, level);
+      var pips = btn.querySelector('.pips');
+      if (pips.childElementCount !== perk.max) {
+        pips.innerHTML = new Array(perk.max + 1).join('<i class="pip"></i>');
+      }
+      for (var i = 0; i < perk.max; i++) {
+        pips.children[i].className = 'pip' + (i < level ? ' on' : '');
+      }
+      btn.querySelector('.perk-cost').textContent = cost === null ? 'máx.' : cost + ' ◍';
+      btn.disabled = cost === null || g.gold < cost;
+      btn.classList.toggle('maxed', cost === null);
+    }, this);
   };
 
   /* ------------------------------------------------------------------ */
@@ -126,6 +186,7 @@
     g.setBuildType(null);
     g.select(null);
     this.el.log.innerHTML = '';
+    this.refreshForge();
     this.showMenu();
   };
 
@@ -154,7 +215,11 @@
     this.setStat('wave', g.wave + '/' + (g.endless ? '∞' : TD.TOTAL_WAVES));
     this.setStat('score', TD.num(g.score));
 
-    /* Botón de oleada. */
+    if (this.cache.killGold !== g.killGold) {
+      this.cache.killGold = g.killGold;
+      this.el.killGold.textContent = TD.num(g.killGold) + ' ◍';
+    }
+
     var label, disabled = false;
     if (g.state === 'prep') {
       var bonus = Math.ceil(Math.max(0, g.prepTimer)) * 3;
@@ -172,7 +237,6 @@
     }
     this.el.btnWave.disabled = disabled;
 
-    /* Marcador de tiempo / enemigos. */
     var timer = '';
     if (g.state === 'prep') timer = 'Asalto en <b>' + Math.ceil(Math.max(0, g.prepTimer)) + 's</b>';
     else if (g.state === 'wave') timer = 'Enemigos en campo: <b>' + (g.enemies.length + g.spawnQueue.length) + '</b>';
@@ -186,6 +250,7 @@
       this.cache.pause = pauseLabel;
       this.el.btnPause.textContent = pauseLabel;
       this.el.btnPause.classList.toggle('btn-on', g.paused);
+      this.el.pauseVeil.hidden = !g.paused;
     }
     var speedLabel = g.speed() + '×';
     if (this.cache.speed !== speedLabel) {
@@ -194,8 +259,29 @@
       this.el.btnSpeed.classList.toggle('btn-on', g.speed() > 1);
     }
 
+    /* Cartel de oleada y destello de daño. */
+    var b = g.banner;
+    if (b) {
+      if (this.bannerText.textContent !== b.text) this.bannerText.textContent = b.text;
+      this.el.banner.className = 'banner' + (b.good ? ' good' : '');
+      this.bannerText.style.opacity = Math.min(1, b.life / 0.6);
+      this.bannerText.style.transform = 'translateY(' + (-6 * (1 - Math.min(1, b.life))) + 'px)';
+    } else if (this.bannerText.style.opacity !== '0') {
+      this.bannerText.style.opacity = '0';
+    }
+    var hurt = (g.hurtFlash * 0.55).toFixed(2);
+    if (this.cache.hurt !== hurt) {
+      this.cache.hurt = hurt;
+      this.el.hurt.style.opacity = hurt;
+    }
+
     this.refreshShop();
     this.refreshSelectionButtons();
+    if (this.cache.forgeGold !== g.gold || this.cache.forgeStamp !== g.perkStamp) {
+      this.cache.forgeGold = g.gold;
+      this.cache.forgeStamp = g.perkStamp;
+      this.refreshForge();
+    }
 
     var nextKey = g.state + ':' + g.wave + ':' + g.endless;
     if (this.cache.nextKey !== nextKey) {
@@ -206,7 +292,7 @@
 
   UI.prototype.renderNextWave = function () {
     var g = this.game;
-    var n = g.state === 'wave' ? g.wave + 1 : g.wave + 1;
+    var n = g.wave + 1;
     if (!g.endless && n > TD.TOTAL_WAVES) {
       this.el.nextWave.innerHTML = '<div class="nw-item">Última oleada del asedio</div>';
       return;
@@ -232,7 +318,19 @@
       return;
     }
     var st = tower.stats();
-    var next = tower.maxLevel() ? null : tower.type.levels[tower.level + 1];
+    var base = tower.baseStats();
+    var nextBase = tower.maxLevel() ? null : tower.type.levels[tower.level + 1];
+    var mul = this.game.perkMul;
+    var next = nextBase ? {
+      damage: nextBase.damage * mul.damage,
+      rate: nextBase.rate * mul.rate,
+      range: nextBase.range * mul.range,
+      splash: nextBase.splash,
+      pierce: nextBase.pierce,
+      slow: nextBase.slow,
+      shots: nextBase.shots,
+      burn: nextBase.burn ? nextBase.burn * mul.damage : 0
+    } : null;
     var mode = TD.TARGET_MODES.filter(function (m) { return m.key === tower.targetMode; })[0];
 
     function row(label, value, nextValue, suffix) {
@@ -245,10 +343,10 @@
 
     var rows = '';
     if (tower.type.kind === 'flame') {
-      rows += row('Daño por segundo', st.damage, next && next.damage);
-      rows += row('Quemadura', st.burn + '/s', next && (next.burn + '/s'));
+      rows += row('Daño por segundo', Math.round(st.damage), next && Math.round(next.damage));
+      rows += row('Quemadura', Math.round(st.burn) + '/s', next && (Math.round(next.burn) + '/s'));
     } else {
-      rows += row('Daño', st.damage, next && next.damage);
+      rows += row('Daño', Math.round(st.damage), next && Math.round(next.damage));
       rows += row('Cadencia', st.rate.toFixed(2), next && next.rate.toFixed(2), '/s');
     }
     rows += row('Alcance', Math.round(st.range), next && Math.round(next.range));
@@ -256,6 +354,10 @@
     if (st.pierce) rows += row('Perforación', st.pierce, next && next.pierce);
     if (st.slow) rows += row('Ralentiza', Math.round(st.slow * 100) + '%', next && (Math.round(next.slow * 100) + '%'));
     if (st.shots > 1 || (next && next.shots > 1)) rows += row('Proyectiles', st.shots || 1, next && (next.shots || 1));
+    if (st.damage !== base.damage) {
+      rows += '<div class="stat-row"><span>Bonos de la Forja</span><span class="up">+' +
+        Math.round((st.damage / base.damage - 1) * 100) + '% daño</span></div>';
+    }
     rows += row('Bajas', tower.kills, null);
     rows += row('Daño total', TD.num(tower.dealt), null);
 
@@ -273,8 +375,8 @@
         '<button class="btn btn-danger" id="sel-sell">Vender ' + tower.sellValue() + ' ◍</button>' +
       '</div>';
 
-    var icon = TD.towerIcon(tower.type.key, tower.level, 44);
-    this.el.selection.querySelector('.sel-icon').replaceWith(icon);
+    this.el.selection.querySelector('.sel-icon')
+      .replaceWith(this.iconFor(TD.towerModel(tower.type.key, tower.level)));
 
     var g = this.game;
     var upBtn = $('sel-upgrade');
@@ -334,7 +436,8 @@
     this.showOverlay({
       title: 'Murallas de Rocanegra',
       text: 'Las hordas del Yermo marchan hacia la fortaleza. Levanta torres junto al camino, ' +
-            'mejóralas entre asaltos y resiste <strong>' + TD.TOTAL_WAVES + ' oleadas</strong>.' +
+            'funde el oro de las bajas en la <strong>Forja</strong> y resiste <strong>' +
+            TD.TOTAL_WAVES + ' oleadas</strong>.' +
             (best ? ' Mejor puntuación: <strong>' + TD.num(best) + '</strong>.' : ''),
       tips: '<li><b>1–5</b> elige torre · <b>clic</b> construye · <b>Esc</b> cancela</li>' +
             '<li><b>U</b> mejorar · <b>X</b> vender · <b>T</b> prioridad de objetivo</li>' +
@@ -356,6 +459,7 @@
     var stats =
       '<div>Oleadas<b>' + g.wave + '</b></div>' +
       '<div>Bajas<b>' + TD.num(g.kills) + '</b></div>' +
+      '<div>Oro de bajas<b>' + TD.num(g.killGold) + '</b></div>' +
       '<div>Puntuación<b>' + TD.num(g.score) + '</b></div>' +
       '<div>Récord<b>' + TD.num(g.best) + '</b></div>';
 

@@ -1,4 +1,7 @@
-/* Proyectiles, partículas y rótulos flotantes. */
+/* Proyectiles, partículas y rótulos flotantes.
+ *
+ * Todo se calcula en el plano del tablero (x, y en píxeles) más una altura h en
+ * casillas; el renderizador 3D lo traduce a la escena. */
 (function (TD) {
   'use strict';
 
@@ -48,7 +51,7 @@
         this.x += (dx / d) * step;
         this.y += (dy / d) * step;
         if (this.kind === 'frost' && Math.random() < 0.5) {
-          game.effects.spark(this.x, this.y, 'rgba(170,225,250,.8)', 0.35, 1.6);
+          game.effects.spark(this.x, this.y, '#aae1fa', 0.35, 1.6, 0.55);
         }
         if (this.life > 3) this.done = true;
         break;
@@ -68,7 +71,7 @@
           if (TD.dist2(this.x, this.y, e.x, e.y) <= rr * rr) {
             this.hitSet.push(e);
             game.dealDamage(e, this.damage, this.damageType, this.tower);
-            game.effects.burst(this.x, this.y, '#f0e4c0', 4);
+            game.effects.burst(this.x, this.y, '#f0e4c0', 5, 80, e.height());
             TD.Audio.hit();
             if (this.hitSet.length >= this.pierce) { this.done = true; break; }
           }
@@ -110,93 +113,19 @@
         hitAny = true;
       }
       if (this.kind === 'frost') {
-        game.effects.ring(this.x, this.y, this.splash, 'rgba(150,220,250,.85)');
-        game.effects.burst(this.x, this.y, '#bfe9ff', 10, 70);
+        game.effects.ring(this.x, this.y, this.splash, 'rgba(150,220,250,.85)', 0.12);
+        game.effects.burst(this.x, this.y, '#bfe9ff', 12, 70, 0.5);
       } else {
         game.effects.explosion(this.x, this.y, this.splash);
         TD.Audio.boom();
+        game.shakeCamera(0.35);
       }
       if (!hitAny && this.kind === 'rock') game.effects.dust(this.x, this.y);
     } else if (this.target && !this.target.dead && !this.target.leaked) {
       game.dealDamage(this.target, this.damage, this.damageType, this.tower);
-      game.effects.burst(this.x, this.y, '#f5e6bd', 5);
+      game.effects.burst(this.x, this.y, '#f5e6bd', 5, 80, this.target.height());
       TD.Audio.hit();
     }
-  };
-
-  Projectile.prototype.draw = function (ctx) {
-    ctx.save();
-    switch (this.kind) {
-      case 'arrow':
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-        ctx.strokeStyle = '#d9c9a3';
-        ctx.lineWidth = 1.6;
-        ctx.beginPath();
-        ctx.moveTo(-9, 0); ctx.lineTo(5, 0);
-        ctx.stroke();
-        ctx.fillStyle = '#cfd6de';
-        ctx.beginPath();
-        ctx.moveTo(9, 0); ctx.lineTo(4, -2.2); ctx.lineTo(4, 2.2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = '#e8e2d0';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(-9, 0); ctx.lineTo(-6, -2.4);
-        ctx.moveTo(-9, 0); ctx.lineTo(-6, 2.4);
-        ctx.stroke();
-        break;
-
-      case 'bolt':
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
-        ctx.fillStyle = 'rgba(255,240,200,.3)';
-        ctx.fillRect(-22, -1.4, 22, 2.8);
-        ctx.fillStyle = '#8a6a3a';
-        ctx.fillRect(-11, -1.8, 18, 3.6);
-        ctx.fillStyle = '#dfe6ef';
-        ctx.beginPath();
-        ctx.moveTo(13, 0); ctx.lineTo(6, -3.4); ctx.lineTo(6, 3.4);
-        ctx.closePath();
-        ctx.fill();
-        break;
-
-      case 'frost':
-        TD.Art.glow(ctx, this.x, this.y, 11, 'rgba(130,210,245,.5)');
-        ctx.fillStyle = '#e7fbff';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(210,245,255,.9)';
-        ctx.lineWidth = 1.2;
-        for (var i = 0; i < 3; i++) {
-          var a = this.life * 6 + (i * Math.PI) / 3;
-          ctx.beginPath();
-          ctx.moveTo(this.x - Math.cos(a) * 6, this.y - Math.sin(a) * 6);
-          ctx.lineTo(this.x + Math.cos(a) * 6, this.y + Math.sin(a) * 6);
-          ctx.stroke();
-        }
-        break;
-
-      case 'rock': {
-        var t = TD.clamp(this.life / this.duration, 0, 1);
-        var gy = TD.lerp(this.sy, this.ty, t);
-        TD.Art.shadow(ctx, TD.lerp(this.sx, this.tx, t), gy, 7 - t * 1.5, 3, 0.22);
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.spin || 0);
-        var g = ctx.createLinearGradient(-7, -7, 7, 7);
-        g.addColorStop(0, '#a39c92');
-        g.addColorStop(1, '#5f5951');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.moveTo(-7, 2); ctx.lineTo(-4, -6); ctx.lineTo(4, -7); ctx.lineTo(7, 1); ctx.lineTo(2, 7); ctx.lineTo(-5, 6);
-        ctx.closePath();
-        ctx.fill();
-        break;
-      }
-    }
-    ctx.restore();
   };
 
   /* ------------------------------------------------------------------ */
@@ -207,7 +136,6 @@
     this.particles = [];
     this.texts = [];
     this.rings = [];
-    this.emberCd = 0;
   }
 
   Effects.prototype.clear = function () {
@@ -216,92 +144,118 @@
     this.rings.length = 0;
   };
 
-  Effects.prototype.spark = function (x, y, color, life, size) {
-    this.particles.push({
-      x: x, y: y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30,
-      life: life, max: life, color: color, size: size || 2, gravity: 0
+  /* x, y van en píxeles del tablero; h es la altura en casillas. */
+  Effects.prototype.add = function (o) {
+    if (this.particles.length > 700) return;
+    this.particles.push(o);
+  };
+
+  Effects.prototype.spark = function (x, y, color, life, size, h) {
+    this.add({
+      x: x, y: y, h: h === undefined ? 0.4 : h,
+      vx: (Math.random() - 0.5) * 30, vz: (Math.random() - 0.5) * 30,
+      vh: (Math.random() - 0.2) * 1.2, gravity: 2.2,
+      life: life, max: life, color: color, size: size || 2
     });
   };
 
-  Effects.prototype.burst = function (x, y, color, count, speed) {
+  Effects.prototype.burst = function (x, y, color, count, speed, h) {
     var sp = speed || 90;
     for (var i = 0; i < count; i++) {
       var a = Math.random() * Math.PI * 2;
       var v = sp * (0.35 + Math.random() * 0.9);
-      this.particles.push({
-        x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+      this.add({
+        x: x, y: y, h: h === undefined ? 0.4 : h,
+        vx: Math.cos(a) * v, vz: Math.sin(a) * v,
+        vh: 1.2 + Math.random() * 2.6, gravity: 7,
         life: 0.3 + Math.random() * 0.3, max: 0.6, color: color,
-        size: 1.4 + Math.random() * 1.8, gravity: 120
+        size: 1.4 + Math.random() * 1.8
       });
     }
   };
 
-  Effects.prototype.explosion = function (x, y, radius) {
-    this.ring(x, y, radius, 'rgba(255,170,70,.9)');
-    for (var i = 0; i < 18; i++) {
+  Effects.prototype.explosion = function (x, y, radius, h) {
+    var base = h === undefined ? 0.25 : h;
+    this.ring(x, y, radius, 'rgba(255,170,70,.9)', 0.1);
+    for (var i = 0; i < 20; i++) {
       var a = Math.random() * Math.PI * 2;
       var v = 40 + Math.random() * 150;
-      this.particles.push({
-        x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 30,
+      this.add({
+        x: x, y: y, h: base,
+        vx: Math.cos(a) * v, vz: Math.sin(a) * v,
+        vh: 1.5 + Math.random() * 4, gravity: 8,
         life: 0.35 + Math.random() * 0.45, max: 0.8,
         color: ['#ffd27a', '#f08b32', '#8c6b4a', '#5c5049'][Math.floor(Math.random() * 4)],
-        size: 2 + Math.random() * 3.2, gravity: 200
+        size: 2 + Math.random() * 3.4
       });
     }
-    for (var j = 0; j < 6; j++) {
-      this.particles.push({
-        x: x + (Math.random() - 0.5) * radius, y: y + (Math.random() - 0.5) * radius * 0.6,
-        vx: (Math.random() - 0.5) * 20, vy: -18 - Math.random() * 20,
-        life: 0.6 + Math.random() * 0.5, max: 1.1, color: 'rgba(90,80,70,.55)',
-        size: 5 + Math.random() * 6, gravity: -10, smoke: true
+    for (var j = 0; j < 7; j++) {
+      this.add({
+        x: x + (Math.random() - 0.5) * radius, y: y + (Math.random() - 0.5) * radius,
+        h: base + 0.2,
+        vx: (Math.random() - 0.5) * 20, vz: (Math.random() - 0.5) * 20,
+        vh: 0.6 + Math.random() * 0.8, gravity: -0.4,
+        life: 0.6 + Math.random() * 0.5, max: 1.1, color: '#6b6259',
+        size: 5 + Math.random() * 6, smoke: true
       });
     }
   };
 
-  Effects.prototype.dust = function (x, y) {
-    for (var i = 0; i < 8; i++) {
+  Effects.prototype.dust = function (x, y, h) {
+    for (var i = 0; i < 10; i++) {
       var a = Math.random() * Math.PI * 2;
-      this.particles.push({
-        x: x, y: y, vx: Math.cos(a) * 50, vy: Math.sin(a) * 30 - 15,
-        life: 0.3 + Math.random() * 0.3, max: 0.6, color: 'rgba(150,130,100,.6)',
-        size: 2 + Math.random() * 3, gravity: 120
+      this.add({
+        x: x, y: y, h: h === undefined ? 0.1 : h,
+        vx: Math.cos(a) * 50, vz: Math.sin(a) * 50,
+        vh: 0.7 + Math.random() * 1.1, gravity: 5,
+        life: 0.3 + Math.random() * 0.3, max: 0.6, color: '#9a8768',
+        size: 2 + Math.random() * 3
       });
     }
   };
 
-  Effects.prototype.blood = function (x, y, color) {
-    for (var i = 0; i < 12; i++) {
+  Effects.prototype.blood = function (x, y, color, h) {
+    for (var i = 0; i < 14; i++) {
       var a = Math.random() * Math.PI * 2;
       var v = 30 + Math.random() * 110;
-      this.particles.push({
-        x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 40,
+      this.add({
+        x: x, y: y, h: h === undefined ? 0.4 : h,
+        vx: Math.cos(a) * v, vz: Math.sin(a) * v,
+        vh: 1.6 + Math.random() * 2.4, gravity: 9,
         life: 0.3 + Math.random() * 0.4, max: 0.7, color: color,
-        size: 1.6 + Math.random() * 2.4, gravity: 260
+        size: 1.6 + Math.random() * 2.4
       });
     }
   };
 
-  Effects.prototype.emberTrail = function (x0, y0, x1, y1) {
-    if (Math.random() > 0.4) return;
+  Effects.prototype.emberTrail = function (x0, y0, x1, y1, h) {
+    if (Math.random() > 0.45) return;
     var t = Math.random();
-    this.particles.push({
+    this.add({
       x: TD.lerp(x0, x1, t), y: TD.lerp(y0, y1, t),
-      vx: (Math.random() - 0.5) * 30, vy: -20 - Math.random() * 30,
+      h: TD.lerp(0.95, h === undefined ? 0.4 : h, t),
+      vx: (Math.random() - 0.5) * 24, vz: (Math.random() - 0.5) * 24,
+      vh: 0.5 + Math.random() * 0.9, gravity: -0.8,
       life: 0.3 + Math.random() * 0.3, max: 0.6,
       color: Math.random() < 0.5 ? '#ffb347' : '#ffe28a',
-      size: 1.2 + Math.random() * 1.6, gravity: -30
+      size: 1.2 + Math.random() * 1.6
     });
   };
 
-  Effects.prototype.ring = function (x, y, radius, color) {
-    this.rings.push({ x: x, y: y, r: radius * 0.25, max: radius, life: 0.42, maxLife: 0.42, color: color });
+  Effects.prototype.ring = function (x, y, radius, color, h) {
+    this.rings.push({
+      x: x, y: y, r: radius * 0.25, max: radius, life: 0.42, maxLife: 0.42,
+      color: color, h: h === undefined ? 0.08 : h
+    });
+    if (this.rings.length > 10) this.rings.shift();
   };
 
-  Effects.prototype.text = function (x, y, str, color, size) {
+  Effects.prototype.text = function (x, y, str, color, size, h) {
     this.texts.push({
-      x: x, y: y, text: str, color: color || '#f3e6c4',
-      life: 0.95, max: 0.95, size: size || 13, vy: -34
+      x: x, y: y, h: h === undefined ? 0.9 : h, text: str, color: color || '#f3e6c4',
+      life: 1.0, max: 1.0, size: size || 14
     });
+    if (this.texts.length > 24) this.texts.shift();
   };
 
   Effects.prototype.update = function (dt) {
@@ -311,9 +265,17 @@
       p.life -= dt;
       if (p.life <= 0) { this.particles.splice(i, 1); continue; }
       p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vy += p.gravity * dt;
-      p.vx *= 0.98;
+      p.y += p.vz * dt;
+      p.h += p.vh * dt;
+      p.vh -= p.gravity * dt;
+      p.vx *= 0.97;
+      p.vz *= 0.97;
+      if (p.h < 0.04) {
+        p.h = 0.04;
+        p.vh *= -0.25;
+        p.vx *= 0.6;
+        p.vz *= 0.6;
+      }
     }
     for (i = this.rings.length - 1; i >= 0; i--) {
       var r = this.rings[i];
@@ -322,47 +284,10 @@
       r.r = TD.lerp(r.max * 0.25, r.max, 1 - r.life / r.maxLife);
     }
     for (i = this.texts.length - 1; i >= 0; i--) {
-      var tx = this.texts[i];
-      tx.life -= dt;
-      if (tx.life <= 0) { this.texts.splice(i, 1); continue; }
-      tx.y += tx.vy * dt;
-      tx.vy *= 0.92;
-    }
-  };
-
-  Effects.prototype.draw = function (ctx) {
-    var i;
-    ctx.save();
-    for (i = 0; i < this.rings.length; i++) {
-      var r = this.rings[i];
-      ctx.globalAlpha = Math.max(0, r.life / r.maxLife) * 0.9;
-      ctx.strokeStyle = r.color;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    for (i = 0; i < this.particles.length; i++) {
-      var p = this.particles[i];
-      ctx.globalAlpha = Math.max(0, p.life / p.max) * (p.smoke ? 0.6 : 1);
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * (p.smoke ? 1 + (1 - p.life / p.max) : p.life / p.max + 0.3), 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    ctx.textAlign = 'center';
-    for (i = 0; i < this.texts.length; i++) {
       var t = this.texts[i];
-      ctx.globalAlpha = Math.min(1, t.life / t.max * 1.6);
-      ctx.font = '700 ' + t.size + 'px Cinzel, Georgia, serif';
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'rgba(0,0,0,.75)';
-      ctx.strokeText(t.text, t.x, t.y);
-      ctx.fillStyle = t.color;
-      ctx.fillText(t.text, t.x, t.y);
+      t.life -= dt;
+      if (t.life <= 0) this.texts.splice(i, 1);
     }
-    ctx.restore();
   };
 
   TD.Projectile = Projectile;

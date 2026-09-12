@@ -1,4 +1,8 @@
-/* Motor del juego: economía, oleadas, bucle principal y pintado. */
+/* Motor del juego: economía, oleadas y bucle principal.
+ *
+ * No dibuja nada: mantiene el estado en coordenadas de tablero (píxeles) y la
+ * escena de js/render3d.js lo refleja cada fotograma.
+ */
 (function (TD) {
   'use strict';
 
@@ -11,10 +15,10 @@
 
   function Game(canvas, hooks) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
     this.hooks = hooks || {};
     this.level = TD.buildLevel();
     this.effects = new TD.Effects();
+    this.view = new TD.Renderer3D(canvas, this);
     this.time = 0;
     this.speedIndex = 0;
     this.paused = false;
@@ -24,9 +28,12 @@
     this.selected = null;
     this.reset();
     this.setupInput();
-    this.resize();
     window.addEventListener('resize', this.resize.bind(this));
   }
+
+  Game.prototype.load = function (onReady) {
+    this.view.load(onReady);
+  };
 
   Game.prototype.reset = function () {
     this.gold = START_GOLD;
@@ -36,11 +43,15 @@
     this.endless = false;
     this.kills = 0;
     this.leaked = 0;
+    this.killGold = 0;
     this.enemies = [];
     this.towers = [];
     this.towerGrid = {};
     this.projectiles = [];
     this.spawnQueue = [];
+    this.perks = {};
+    this.perkStamp = 0;
+    this.perkMul = TD.perkMultipliers(this.perks, 0);
     this.effects.clear();
     this.prepTimer = PREP_FIRST;
     this.state = 'menu';
@@ -49,6 +60,7 @@
     this.selected = null;
     this.banner = null;
     this.hurtFlash = 0;
+    if (this.view) this.view.resetViews();
     this.emit();
   };
 
@@ -58,40 +70,32 @@
   Game.prototype.log = function (msg, cls) {
     if (this.hooks.onLog) this.hooks.onLog(msg, cls);
   };
+  Game.prototype.resize = function () {
+    if (this.view && this.view.renderer) this.view.resize();
+  };
+  Game.prototype.shakeCamera = function (amount) {
+    if (this.view) this.view.shake(amount);
+  };
 
   /* ------------------------------------------------------------------ */
   /* Entrada                                                             */
   /* ------------------------------------------------------------------ */
 
-  Game.prototype.toCanvas = function (ev) {
-    var rect = this.canvas.getBoundingClientRect();
-    return {
-      x: (ev.clientX - rect.left) * (TD.W / rect.width),
-      y: (ev.clientY - rect.top) * (TD.H / rect.height)
-    };
-  };
-
   Game.prototype.setupInput = function () {
     var self = this;
 
     this.canvas.addEventListener('pointermove', function (ev) {
-      var p = self.toCanvas(ev);
-      var col = Math.floor(p.x / TD.TILE);
-      var row = Math.floor(p.y / TD.TILE);
-      self.hover = (col >= 0 && col < TD.GRID_W && row >= 0 && row < TD.GRID_H)
-        ? { col: col, row: row, x: p.x, y: p.y } : null;
+      self.hover = self.view.ready ? self.view.pick(ev.clientX, ev.clientY) : null;
     });
-
     this.canvas.addEventListener('pointerleave', function () { self.hover = null; });
 
     this.canvas.addEventListener('pointerdown', function (ev) {
       if (ev.button === 2) return;
       TD.Audio.resume();
-      var p = self.toCanvas(ev);
-      var col = Math.floor(p.x / TD.TILE);
-      var row = Math.floor(p.y / TD.TILE);
-      self.hover = { col: col, row: row, x: p.x, y: p.y };
-      self.click(col, row);
+      var hit = self.view.ready ? self.view.pick(ev.clientX, ev.clientY) : null;
+      if (!hit) return;
+      self.hover = hit;
+      self.click(hit.col, hit.row);
     });
 
     this.canvas.addEventListener('contextmenu', function (ev) {
@@ -120,24 +124,32 @@
     return !this.towerGrid[col + ',' + row];
   };
 
+  /* Alcance ya multiplicado por la Forja (para el fantasma de construcción). */
+  Game.prototype.towerRange = function (type, level) {
+    return type.levels[level].range * this.perkMul.range;
+  };
+
   Game.prototype.build = function (col, row) {
     var type = TD.TOWER_TYPES[this.buildType];
     if (!type) return;
+    var cx = (col + 0.5) * TD.TILE;
+    var cy = (row + 0.5) * TD.TILE;
     if (!this.canBuild(col, row)) {
       TD.Audio.denied();
-      this.effects.text((col + 0.5) * TD.TILE, (row + 0.5) * TD.TILE, 'Terreno ocupado', '#e08a80', 12);
+      this.effects.text(cx, cy, 'Terreno ocupado', '#e08a80', 13);
       return;
     }
     if (this.gold < type.cost) {
       TD.Audio.denied();
-      this.effects.text((col + 0.5) * TD.TILE, (row + 0.5) * TD.TILE, 'Sin oro', '#e08a80', 13);
+      this.effects.text(cx, cy, 'Sin oro', '#e08a80', 14);
       return;
     }
     var tower = new TD.Tower(type.key, col, row);
+    tower.game = this;
     this.towers.push(tower);
     this.towerGrid[col + ',' + row] = tower;
     this.gold -= type.cost;
-    this.effects.dust(tower.x, tower.y + 8);
+    this.effects.dust(tower.x, tower.y);
     TD.Audio.build();
     this.log('Construida ' + type.name + '.', 'good');
     this.select(tower);
@@ -152,8 +164,8 @@
     this.gold -= cost;
     t.upgrade();
     TD.Audio.upgrade();
-    this.effects.ring(t.x, t.y - 10, 34, 'rgba(217,164,65,.9)');
-    this.effects.text(t.x, t.y - 30, '¡Mejorada!', '#f0cf87', 12);
+    this.effects.ring(t.x, t.y, 42, 'rgba(217,164,65,.9)', 0.12);
+    this.effects.text(t.x, t.y, '¡Mejorada!', '#f0cf87', 14, 1.3);
     this.log(t.type.name + ' mejorada a nivel ' + (t.level + 1) + '.', 'good');
     this.select(t);
     this.emit();
@@ -166,8 +178,8 @@
     this.gold += value;
     this.towers.splice(this.towers.indexOf(t), 1);
     delete this.towerGrid[t.col + ',' + t.row];
-    this.effects.dust(t.x, t.y + 6);
-    this.effects.text(t.x, t.y - 20, '+' + value, '#f0cf87', 13);
+    this.effects.dust(t.x, t.y);
+    this.effects.text(t.x, t.y, '+' + value, '#f0cf87', 14, 1.1);
     TD.Audio.sell();
     this.log('Desmantelada ' + t.type.name + ' (+' + value + ' oro).');
     this.select(null);
@@ -190,9 +202,41 @@
 
   Game.prototype.setBuildType = function (key) {
     this.buildType = key;
-    this.canvas.classList.toggle('building', !!key);
     if (key) this.select(null);
     if (this.hooks.onBuildType) this.hooks.onBuildType(key);
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* Forja: mejoras compradas con el oro de las bajas                    */
+  /* ------------------------------------------------------------------ */
+
+  Game.prototype.perkLevel = function (key) { return this.perks[key] || 0; };
+
+  Game.prototype.buyPerk = function (key) {
+    var perk = TD.perk(key);
+    if (!perk) return false;
+    var level = this.perkLevel(key);
+    var cost = TD.perkCost(perk, level);
+    if (cost === null || this.gold < cost) { TD.Audio.denied(); return false; }
+
+    this.gold -= cost;
+    this.perks[key] = level + 1;
+    this.perkStamp++;
+    this.perkMul = TD.perkMultipliers(this.perks, this.perkStamp);
+
+    if (perk.stat === 'lives') {
+      this.lives += perk.step;
+      this.effects.text(this.level.gate.x - 60, this.level.gate.y, '+' + perk.step + ' vidas', '#7fd86a', 16, 1.6);
+    } else {
+      var self = this;
+      this.towers.forEach(function (t) {
+        self.effects.ring(t.x, t.y, 34, 'rgba(217,164,65,.9)', 0.12);
+      });
+    }
+    TD.Audio.upgrade();
+    this.log('Forja: ' + perk.name + ' nivel ' + (level + 1) + '.', 'good');
+    this.emit();
+    return true;
   };
 
   /* ------------------------------------------------------------------ */
@@ -212,7 +256,8 @@
     if (this.prepTimer > 0.5) {
       var bonus = Math.ceil(this.prepTimer) * 3;
       this.gold += bonus;
-      this.effects.text(TD.W / 2, 90, '+' + bonus + ' oro por adelantarse', '#f0cf87', 15);
+      this.effects.text(this.level.spawn.x + 120, this.level.spawn.y,
+        '+' + bonus + ' oro por adelantarse', '#f0cf87', 15, 1.8);
     }
     this.wave++;
     var wave = TD.getWave(this.wave);
@@ -231,7 +276,7 @@
     this.spawnQueue.sort(function (a, b) { return a.at - b.at; });
     this.waveTime = 0;
     this.state = 'wave';
-    this.banner = { text: 'Oleada ' + this.wave, life: 2.2 };
+    this.banner = { text: 'Oleada ' + this.wave, life: 2.4 };
     TD.Audio.horn();
     this.log('¡Comienza la oleada ' + this.wave + '!', 'bad');
     this.emit();
@@ -241,7 +286,7 @@
     var bonus = 30 + this.wave * 8;
     this.gold += bonus;
     this.score += 100 * this.wave;
-    this.effects.text(TD.W / 2, TD.H / 2 - 40, 'Oleada superada  +' + bonus + ' oro', '#f0cf87', 18);
+    this.banner = { text: 'Oleada superada  +' + bonus + ' oro', life: 2.0, good: true };
     this.log('Oleada ' + this.wave + ' rechazada (+' + bonus + ' oro).', 'good');
 
     if (this.wave >= TD.TOTAL_WAVES && !this.endless) {
@@ -260,7 +305,7 @@
     try { best = parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; } catch (e) { best = 0; }
     if (this.score > best) {
       best = this.score;
-      try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { /* almacenamiento no disponible */ }
+      try { localStorage.setItem(BEST_KEY, String(best)); } catch (e) { /* sin almacenamiento */ }
     }
     this.best = best;
     if (victory) TD.Audio.victory(); else TD.Audio.defeat();
@@ -289,21 +334,25 @@
     var dealt = enemy.damage(amount, kind, this);
     if (tower) tower.dealt += dealt;
     if (amount >= 45) {
-      this.effects.text(enemy.x, enemy.y - enemy.type.radius - 6, '-' + TD.num(dealt), '#ffd9a0', 12);
+      this.effects.text(enemy.x, enemy.y, '-' + TD.num(dealt), '#ffd9a0', 13,
+        enemy.height() + 0.45);
     }
     this._credit = null;
     return dealt;
   };
 
   Game.prototype.onEnemyKilled = function (enemy) {
-    this.gold += enemy.type.gold;
+    var reward = Math.round(enemy.type.gold * this.perkMul.gold);
+    this.gold += reward;
+    this.killGold += reward;
     this.kills++;
     this.score += enemy.type.gold * 2 + Math.round(enemy.maxHp / 20);
     if (this._credit) this._credit.kills++;
-    this.effects.blood(enemy.x, enemy.y, enemy.type.boss ? '#d9a441' : '#7a2b22');
-    this.effects.text(enemy.x, enemy.y - enemy.type.radius - 4, '+' + enemy.type.gold, '#f0cf87', 12);
+    this.effects.blood(enemy.x, enemy.y, enemy.type.boss ? '#d9a441' : '#7a2b22', enemy.height());
+    this.effects.text(enemy.x, enemy.y, '+' + reward, '#f0cf87', 13, enemy.height() + 0.4);
     if (enemy.type.boss) {
-      this.effects.explosion(enemy.x, enemy.y, 70);
+      this.effects.explosion(enemy.x, enemy.y, 80, enemy.height());
+      this.shakeCamera(0.8);
       this.log('¡' + enemy.type.name + ' ha caído!', 'good');
     }
     TD.Audio.die();
@@ -314,8 +363,10 @@
     this.lives -= enemy.type.leak;
     this.leaked++;
     this.hurtFlash = 1;
+    this.shakeCamera(0.5 + enemy.type.leak * 0.06);
     TD.Audio.leak();
-    this.effects.text(this.level.gate.x - 30, this.level.gate.y - 30, '-' + enemy.type.leak, '#e0554a', 16);
+    this.effects.text(this.level.gate.x - 40, this.level.gate.y,
+      '-' + enemy.type.leak, '#e0554a', 18, 1.4);
     this.log(enemy.type.name + ' ha cruzado el portón (-' + enemy.type.leak + ').', 'bad');
     if (this.lives <= 0) {
       this.lives = 0;
@@ -385,148 +436,8 @@
     for (var i = 0; i < steps; i++) this.update(dt);
   };
 
-  /* ------------------------------------------------------------------ */
-  /* Pintado                                                             */
-  /* ------------------------------------------------------------------ */
-
-  Game.prototype.resize = function () {
-    var dpr = Math.min(2, window.devicePixelRatio || 1);
-    this.canvas.width = TD.W * dpr;
-    this.canvas.height = TD.H * dpr;
-    this.dpr = dpr;
-  };
-
-  Game.prototype.draw = function () {
-    var ctx = this.ctx;
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    ctx.clearRect(0, 0, TD.W, TD.H);
-    ctx.drawImage(this.level.bg, 0, 0);
-
-    this.drawBuildHints(ctx);
-
-    /* Torres y enemigos ordenados por profundidad. */
-    var drawables = this.towers.concat(this.enemies);
-    drawables.sort(function (a, b) {
-      var ay = a.baseY !== undefined ? a.baseY : a.y;
-      var by = b.baseY !== undefined ? b.baseY : b.y;
-      return ay - by;
-    });
-    for (var i = 0; i < drawables.length; i++) drawables[i].draw(ctx, this.time);
-
-    for (var j = 0; j < this.projectiles.length; j++) this.projectiles[j].draw(ctx);
-    this.effects.draw(ctx);
-
-    this.drawGhost(ctx);
-    this.drawSelection(ctx);
-    this.drawHud(ctx);
-  };
-
-  Game.prototype.drawBuildHints = function (ctx) {
-    if (!this.buildType || !this.hover) return;
-    ctx.save();
-    ctx.globalAlpha = 0.16;
-    for (var r = 0; r < TD.GRID_H; r++) {
-      for (var c = 0; c < TD.GRID_W; c++) {
-        if (!this.canBuild(c, r)) continue;
-        ctx.fillStyle = '#eaf3d8';
-        ctx.fillRect(c * TD.TILE + 2, r * TD.TILE + 2, TD.TILE - 4, TD.TILE - 4);
-      }
-    }
-    ctx.restore();
-  };
-
-  Game.prototype.drawGhost = function (ctx) {
-    if (!this.buildType || !this.hover) return;
-    var type = TD.TOWER_TYPES[this.buildType];
-    var col = this.hover.col, row = this.hover.row;
-    var x = (col + 0.5) * TD.TILE, y = (row + 0.5) * TD.TILE;
-    var ok = this.canBuild(col, row) && this.gold >= type.cost;
-
-    ctx.save();
-    ctx.globalAlpha = 0.85;
-    drawRange(ctx, x, y, type.levels[0].range, ok ? 'rgba(150,220,120,' : 'rgba(220,90,70,');
-    ctx.globalAlpha = ok ? 0.72 : 0.42;
-    var ghost = new TD.Tower(type.key, col, row);
-    ghost.buildAnim = 0;
-    ghost.draw(ctx, this.time);
-    ctx.restore();
-
-    ctx.save();
-    ctx.strokeStyle = ok ? 'rgba(160,230,130,.95)' : 'rgba(230,100,80,.95)';
-    ctx.lineWidth = 2;
-    TD.roundRect(ctx, col * TD.TILE + 2, row * TD.TILE + 2, TD.TILE - 4, TD.TILE - 4, 4);
-    ctx.stroke();
-    ctx.restore();
-  };
-
-  Game.prototype.drawSelection = function (ctx) {
-    var t = this.selected;
-    if (!t) return;
-    drawRange(ctx, t.x, t.y, t.stats().range, 'rgba(240,207,135,');
-    ctx.save();
-    ctx.strokeStyle = 'rgba(240,207,135,.95)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 4]);
-    ctx.lineDashOffset = -this.time * 18;
-    TD.roundRect(ctx, t.col * TD.TILE + 2, t.row * TD.TILE + 2, TD.TILE - 4, TD.TILE - 4, 4);
-    ctx.stroke();
-    ctx.restore();
-  };
-
-  function drawRange(ctx, x, y, r, rgbPrefix) {
-    ctx.save();
-    ctx.fillStyle = rgbPrefix + '0.08)';
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = rgbPrefix + '0.6)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  Game.prototype.drawHud = function (ctx) {
-    /* Destello rojo cuando la fortaleza recibe daño. */
-    if (this.hurtFlash > 0) {
-      ctx.save();
-      var g = ctx.createRadialGradient(TD.W / 2, TD.H / 2, TD.H * 0.3, TD.W / 2, TD.H / 2, TD.H);
-      g.addColorStop(0, 'rgba(180,40,30,0)');
-      g.addColorStop(1, 'rgba(180,40,30,' + (this.hurtFlash * 0.55) + ')');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, TD.W, TD.H);
-      ctx.restore();
-    }
-
-    if (this.banner) {
-      ctx.save();
-      var a = TD.clamp(this.banner.life / 0.6, 0, 1);
-      ctx.globalAlpha = a;
-      ctx.textAlign = 'center';
-      ctx.font = '700 44px Cinzel, Georgia, serif';
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = 'rgba(0,0,0,.8)';
-      ctx.strokeText(this.banner.text, TD.W / 2, 96);
-      var grad = ctx.createLinearGradient(0, 60, 0, 110);
-      grad.addColorStop(0, '#f6e1a8');
-      grad.addColorStop(1, '#c9922f');
-      ctx.fillStyle = grad;
-      ctx.fillText(this.banner.text, TD.W / 2, 96);
-      ctx.restore();
-    }
-
-    if (this.paused && this.state !== 'menu') {
-      ctx.save();
-      ctx.fillStyle = 'rgba(8,7,6,.55)';
-      ctx.fillRect(0, 0, TD.W, TD.H);
-      ctx.textAlign = 'center';
-      ctx.font = '700 38px Cinzel, Georgia, serif';
-      ctx.fillStyle = '#e9dcbe';
-      ctx.fillText('Tregua', TD.W / 2, TD.H / 2);
-      ctx.font = '16px Georgia, serif';
-      ctx.fillStyle = '#b9a77f';
-      ctx.fillText('Pulsa P para reanudar', TD.W / 2, TD.H / 2 + 28);
-      ctx.restore();
-    }
+  Game.prototype.draw = function (dt) {
+    this.view.frame(dt);
   };
 
   Game.prototype.speed = function () { return SPEEDS[this.speedIndex]; };
@@ -543,5 +454,4 @@
   };
 
   TD.Game = Game;
-  TD.SPEEDS = SPEEDS;
 })(window.TD = window.TD || {});

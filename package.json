@@ -1,0 +1,17 @@
+{
+  "name": "murallas-de-rocanegra",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Tower defense medieval 3D con modelos hechos en Blender",
+  "scripts": {
+    "models": "blender -b -P blender/build_models.py -- --out assets/models/rocanegra.glb && node tools/pack_models.js",
+    "preview": "blender -b -P blender/build_models.py -- --out assets/models/rocanegra.glb --preview assets/models/preview.png",
+    "vendor": "esbuild tools/three-entry.js --bundle --format=iife --minify --legal-comments=none --outfile=vendor/three.bundle.js",
+    "apk": "bash tools/build_apk.sh",
+    "serve": "http-server -p 8000 -c-1 ."
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.2",
+    "three": "0.160.1"
+  }
+}

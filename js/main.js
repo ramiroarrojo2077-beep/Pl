@@ -1,4 +1,4 @@
-/* Arranque: conecta el motor con la interfaz y mantiene el bucle de render. */
+/* Arranque: carga los modelos, conecta motor e interfaz y mantiene el bucle. */
 (function (TD) {
   'use strict';
 
@@ -14,23 +14,28 @@
       onFinish: function (victory, g) { if (ui) ui.showEnd(victory, g); }
     });
 
-    ui = new TD.UI(game);
-    ui.showMenu();
-    ui.update();
+    game.view.attachTextLayer(document.getElementById('fx'));
 
-    var last = performance.now();
-    function frame(now) {
-      var dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      game.step(dt);
-      game.draw();
+    game.load(function () {
+      ui = new TD.UI(game);
+      ui.showMenu();
       ui.update();
+      game.resize();
+
+      var last = performance.now();
+      function frame(now) {
+        var dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        game.step(dt);
+        game.draw(dt);
+        ui.update();
+        requestAnimationFrame(frame);
+      }
       requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
+    });
 
     /* Expuesto para depuración desde la consola del navegador. */
     TD.game = game;
-    TD.ui = ui;
+    TD.ui = function () { return ui; };
   });
 })(window.TD = window.TD || {});

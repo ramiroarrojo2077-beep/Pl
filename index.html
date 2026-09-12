@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murallas de Rocanegra — Tower Defense Medieval</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=IM+Fell+English&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <h1 class="title">Murallas de <span>Rocanegra</span></h1>
+    <div class="stats">
+      <div class="stat" title="Oro disponible">
+        <span class="ico ico-gold"></span><span id="stat-gold">0</span>
+      </div>
+      <div class="stat" title="Vidas restantes de la fortaleza">
+        <span class="ico ico-heart"></span><span id="stat-lives">20</span>
+      </div>
+      <div class="stat" title="Oleada actual">
+        <span class="ico ico-wave"></span><span id="stat-wave">0/20</span>
+      </div>
+      <div class="stat" title="Puntuación">
+        <span class="ico ico-star"></span><span id="stat-score">0</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="stage">
+      <canvas id="game" width="960" height="624" aria-label="Campo de batalla"></canvas>
+
+      <div class="stage-bar">
+        <button id="btn-wave" class="btn btn-primary">Iniciar oleada</button>
+        <button id="btn-pause" class="btn" title="Pausa (P)">Pausa</button>
+        <button id="btn-speed" class="btn" title="Velocidad (F)">1×</button>
+        <button id="btn-sound" class="btn" title="Sonido (M)">🔊</button>
+        <span id="wave-timer" class="wave-timer"></span>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <div class="overlay-card">
+          <h2 id="ov-title">Murallas de Rocanegra</h2>
+          <p id="ov-text">
+            Las hordas del Yermo marchan hacia la fortaleza. Levanta torres a lo largo del
+            camino, mejora tus defensas y resiste <strong>20 oleadas</strong>.
+          </p>
+          <ul id="ov-tips" class="tips">
+            <li><b>1–5</b> elige torre · <b>clic</b> construye · <b>Esc</b> cancela</li>
+            <li><b>U</b> mejorar · <b>X</b> vender · <b>T</b> cambiar objetivo</li>
+            <li><b>Espacio</b> siguiente oleada · <b>P</b> pausa · <b>F</b> velocidad</li>
+            <li>Las <b>catapultas</b> no alcanzan a las bestias voladoras</li>
+          </ul>
+          <button id="ov-btn" class="btn btn-primary btn-big">A las almenas</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <section class="block">
+        <h3 class="block-title">Armería</h3>
+        <div id="shop" class="shop"></div>
+      </section>
+
+      <section class="block" id="selection-block" hidden>
+        <h3 class="block-title">Torre seleccionada</h3>
+        <div id="selection" class="selection"></div>
+      </section>
+
+      <section class="block">
+        <h3 class="block-title">Próxima oleada</h3>
+        <div id="next-wave" class="next-wave"></div>
+      </section>
+
+      <section class="block">
+        <h3 class="block-title">Crónica</h3>
+        <ul id="log" class="log"></ul>
+      </section>
+
+      <button id="btn-restart" class="btn btn-ghost">Reiniciar asedio</button>
+    </aside>
+  </div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/level.js"></script>
+<script src="js/art.js"></script>
+<script src="js/enemies.js"></script>
+<script src="js/towers.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/waves.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

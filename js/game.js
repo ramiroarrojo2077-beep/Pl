@@ -440,6 +440,20 @@
   /* Combate                                                             */
   /* ------------------------------------------------------------------ */
 
+  /* Camada: crías, jinetes desmontados y lo que suelten los jefes. */
+  Game.prototype.spawnEnemy = function (typeKey, parent, dist) {
+    var e = new TD.Enemy(typeKey, this.level,
+      parent ? parent.hpMul : 1, parent ? parent.speedMul : 1);
+    e.dist = TD.clamp(dist === undefined ? (parent ? parent.dist : 0) : dist,
+      0, e.path.length - 1);
+    var p = e.path.at(e.dist);
+    e.x = p.x;
+    e.y = p.y;
+    e.angle = p.angle;
+    this.enemies.push(e);
+    return e;
+  };
+
   Game.prototype.spawnProjectile = function (opts) {
     this.projectiles.push(new TD.Projectile(opts));
   };
@@ -465,6 +479,17 @@
     this.score += enemy.type.gold * 2 + Math.round(enemy.maxHp / 20);
     if (this._credit) this._credit.kills++;
     this.effects.blood(enemy.x, enemy.y, enemy.type.boss ? '#d9a441' : '#7a2b22', enemy.height());
+
+    /* Lo que sale de dentro al morir. */
+    if (enemy.type.onDeath) {
+      var self = this;
+      enemy.type.onDeath.forEach(function (grp) {
+        for (var i = 0; i < grp.count; i++) {
+          self.spawnEnemy(grp.type, enemy, enemy.dist - 6 - i * 12);
+        }
+      });
+      this.effects.ring(enemy.x, enemy.y, 60, 'rgba(200,160,90,.8)', 0.15);
+    }
     this.effects.text(enemy.x, enemy.y, '+' + reward, '#f0cf87', 13, enemy.height() + 0.4);
     if (enemy.type.boss) {
       this.effects.explosion(enemy.x, enemy.y, 80, enemy.height());
@@ -518,6 +543,18 @@
     }
 
     var i;
+    /* Las auras se recalculan cada fotograma: escuderos y tamborileros solo
+       amparan a quien tengan cerca en ese momento. */
+    for (i = 0; i < this.enemies.length; i++) {
+      this.enemies[i].auraArmor = 0;
+      this.enemies[i].auraHaste = 0;
+    }
+    for (i = 0; i < this.enemies.length; i++) {
+      if (this.enemies[i].type.aura && !this.enemies[i].dead) {
+        this.enemies[i].applyAura(this.enemies);
+      }
+    }
+
     for (i = 0; i < this.enemies.length; i++) {
       var e = this.enemies[i];
       if (!e.dead) e.update(dt, this);

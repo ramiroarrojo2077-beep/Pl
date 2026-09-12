@@ -99,15 +99,36 @@ el récord de oleadas.
 
 ## Enemigos
 
-Trasgos, lobos huargos, orcos, caballeros negros, ogros, guivernos, nigromantes
-y dos jefes: el **Señor de la Guerra** y el **Dragón de Ceniza**.
+**20 clases**, de trasgos a jefes, y cada una obliga a algo distinto:
 
-- **Armadura.** Resta daño a cada impacto *físico*. Los caballeros (armadura 10)
-  casi ignoran a los arqueros, pero caen ante ballestas y catapultas.
-- **Magia.** Escarcha y pira hacen daño *mágico*: la armadura no lo reduce.
-- **Aire.** Guivernos y dragón sobrevuelan el campo saltándose el camino. Todas
-  las torres los alcanzan salvo la catapulta.
-- Los nigromantes curan a sus aliados cercanos cada dos segundos.
+| Enemigo | Lo que trae |
+| --- | --- |
+| Trasgo, lobo huargo, orco | La masa de siempre |
+| Caballero negro | Armadura 10: los arqueros apenas le hacen cosquillas |
+| Guiverno, murciélago de mina | Vuelan y se saltan el camino; el murciélago ignora el frío |
+| Ogro, golem de piedra | Aguante bruto; el golem además es inmune a la ralentización |
+| Nigromante | Cura a los suyos cada dos segundos |
+| Tamborilero | Acelera un 30 % a los aliados que tenga cerca |
+| Escudero orco | Reduce un 25 % el daño que reciben los suyos |
+| Jinete de huargo | Al morir deja suelto al lobo y al jinete |
+| Araña de la fosa | Al morir revienta en tres crías |
+| Espectro | Ignora el 70 % del daño físico: solo la magia lo hiere |
+| Nacido del fuego | Inmune a quemadura y veneno |
+| Señor de la Guerra, Dragón de Ceniza | Jefes clásicos |
+| Titán de hueso | Escudo de 3.000 que se regenera si lo dejas respirar |
+| Reina de la horda | Va soltando camada sin dejar de avanzar |
+
+Las reglas que los gobiernan:
+
+- **Armadura.** Resta daño a cada impacto *físico*.
+- **Magia.** Escarcha, fuego, ponzoña y tormenta hacen daño *mágico*: la
+  armadura no lo reduce, pero algunos enemigos sí tienen resistencia mágica.
+- **Aire.** Los voladores se saltan el camino. Todas las torres los alcanzan
+  salvo el asedio.
+- **Auras.** Tamborileros y escuderos solo amparan a quien tengan cerca: si los
+  matas primero, el resto de la fila se desmorona.
+- **Escudos y camada.** Lo que absorbe o lo que se multiplica al morir cambia a
+  qué torre le toca el trabajo.
 
 ## Compilar
 
@@ -182,6 +203,22 @@ js/game.js              motor: economía, oleadas y bucle
 js/ui.js                panel lateral, tienda, Forja y atajos
 js/main.js              arranque
 ```
+
+## Acabado de la escena
+
+- Modelos biselados y con normales suaves por ángulo en todo lo que se mira de
+  cerca (construcciones, bestiario, proyectiles, fortaleza y portón); el
+  paisaje de fondo se queda plano y barato.
+- El propio cielo se convierte en mapa de entorno (PMREM), así que metales, oro
+  y hielo recogen luz sin necesidad de más focos.
+- Post-procesado en escritorio: destino multimuestreado (antialias real bajo el
+  bloom), bloom para fuego y hielo, y un grado de color final con contraste en
+  S, saturación, viñeta y grano.
+- Sombras de sol de media tarde sobre un frustum ceñido al tablero, más hierba
+  y guijarros instanciados por las casillas libres.
+
+En móvil todo eso va por lo bajo automáticamente. Se puede forzar con
+`?calidad=baja` o `?calidad=alta` en la URL.
 
 El motor no dibuja: mantiene el estado en coordenadas de tablero (píxeles) y
 `js/render3d.js` lo refleja cada fotograma en la escena (x → X, y → Z, altura en

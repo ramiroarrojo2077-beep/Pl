@@ -33,7 +33,12 @@
     this.ready = false;
     this.time = 0;
     this.shakeAmount = 0;
-    this.quality = window.devicePixelRatio > 1 && window.innerWidth < 900 ? 'low' : 'high';
+    /* Calidad automática, con salida manual: ?calidad=baja apaga el
+       post-procesado y aligera sombras y detalle del suelo. */
+    var forced = (location.search.match(/[?&]calidad=(alta|baja)/) || [])[1];
+    this.quality = forced === 'baja' ? 'low'
+      : forced === 'alta' ? 'high'
+      : (window.devicePixelRatio > 1 && window.innerWidth < 900 ? 'low' : 'high');
   }
 
   /* ------------------------------------------------------------------ */
@@ -102,7 +107,7 @@
 
     /* Sol bajo de media tarde: sombras largas y luz cálida. */
     var sun = new THREE.DirectionalLight(0xffe9c2, 2.7);
-    sun.position.set(TD.GRID_W * 1.3, 11.5, -3.5);
+    sun.position.set(TD.GRID_W * 1.15, 15.5, -3.5);
     sun.target.position.set(TD.GRID_W / 2, 0, TD.GRID_H / 2);
     sun.castShadow = true;
     var shadowSize = this.quality === 'high' ? 2560 : 1280;
@@ -358,20 +363,63 @@
     }
   };
 
-  /* Post-procesado: un punto de bloom para el fuego, el hielo y el oro. */
+  /* Grado de color final: contraste en S, un punto de saturación, viñeta y
+     grano fino. Es lo que da el acabado de cámara al conjunto. */
+  var GRADE_SHADER = {
+    uniforms: {
+      tDiffuse: { value: null },
+      time: { value: 0 },
+      contrast: { value: 1.04 },
+      saturation: { value: 1.07 },
+      vignette: { value: 0.95 },
+      grain: { value: 0.022 }
+    },
+    vertexShader: [
+      'varying vec2 vUv;',
+      'void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }'
+    ].join('\n'),
+    fragmentShader: [
+      'uniform sampler2D tDiffuse;',
+      'uniform float time; uniform float contrast; uniform float saturation;',
+      'uniform float vignette; uniform float grain;',
+      'varying vec2 vUv;',
+      'float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+      'void main() {',
+      '  vec4 tex = texture2D(tDiffuse, vUv);',
+      '  vec3 c = tex.rgb;',
+      '  c = (c - 0.5) * contrast + 0.5;',
+      '  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));',
+      '  c = mix(vec3(l), c, saturation);',
+      '  vec2 d = vUv - 0.5;',
+      '  float v = smoothstep(0.85, vignette * 0.35, dot(d, d) * 2.0);',
+      '  c *= mix(0.86, 1.0, v);',
+      '  c += (hash(vUv * 1024.0 + fract(time)) - 0.5) * grain;',
+      '  gl_FragColor = vec4(clamp(c, 0.0, 1.0), tex.a);',
+      '}'
+    ].join('\n')
+  };
+
+  /* Post-procesado: oclusión ambiental, bloom y grado de color. */
   Renderer.prototype.buildComposer = function () {
     if (this.quality !== 'high' || !window.PostFX) return;
     var THREE = window.THREE;
     var FX = window.PostFX;
-    var size = new THREE.Vector2(960, 624);
-    /* Destino multimuestreado: el bloom deja de comerse el antialias. */
-    var rt = new THREE.WebGLRenderTarget(960, 624, {
-      type: THREE.HalfFloatType, samples: 4
-    });
+    var w0 = 960, h0 = 624;
+    /* Destino multimuestreado: el post-procesado deja de comerse el antialias. */
+    var rt = new THREE.WebGLRenderTarget(w0, h0, { type: THREE.HalfFloatType, samples: 4 });
     this.composer = new FX.EffectComposer(this.renderer, rt);
     this.composer.addPass(new FX.RenderPass(this.scene, this.camera));
-    this.bloom = new FX.UnrealBloomPass(size, 0.28, 0.6, 0.9);
+
+    /* Nota: se probó oclusión ambiental en pantalla (GTAO), pero la cúpula de
+       cielo envenena su prepaso de profundidad y mancha el plano con halos
+       oscuros. El contacto con el suelo lo resuelven las sombras del sol. */
+
+    this.bloom = new FX.UnrealBloomPass(new THREE.Vector2(w0, h0), 0.3, 0.62, 0.88);
     this.composer.addPass(this.bloom);
+
+    this.grade = new FX.ShaderPass(GRADE_SHADER);
+    this.composer.addPass(this.grade);
+
     this.composer.addPass(new FX.OutputPass());
   };
 
@@ -1228,6 +1276,7 @@
       }
     }
 
+    if (this.grade) this.grade.uniforms.time.value = this.time;
     if (this.composer) this.composer.render(dt);
     else this.renderer.render(this.scene, this.camera);
   };

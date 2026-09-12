@@ -37,6 +37,59 @@
       name: 'Nigromante', hp: 200, speed: 1.25, armor: 2, gold: 30, leak: 2, radius: 16,
       color: '#6a4a86', heal: { amount: 30, radius: 95, every: 2.1 }, modelScale: 1.74
     },
+    bat: {
+      name: 'Murciélago de mina', hp: 70, speed: 3.4, armor: 0, gold: 12, leak: 1, radius: 13,
+      flying: true, slowImmune: true, color: '#6b5a7a', modelScale: 1.7
+    },
+    drummer: {
+      name: 'Tamborilero', hp: 240, speed: 1.4, armor: 2, gold: 30, leak: 1, radius: 16,
+      color: '#a86a3a', modelScale: 1.8,
+      aura: { kind: 'haste', value: 0.3, radius: 120 }
+    },
+    shieldbearer: {
+      name: 'Escudero orco', hp: 320, speed: 1.2, armor: 12, gold: 34, leak: 1, radius: 17,
+      color: '#5d7a4a', modelScale: 1.8,
+      aura: { kind: 'armor', value: 0.25, radius: 110 }
+    },
+    wolfrider: {
+      name: 'Jinete de huargo', hp: 200, speed: 2.6, armor: 3, gold: 26, leak: 1, radius: 16,
+      color: '#8a7f6a', modelScale: 1.8,
+      onDeath: [{ type: 'wolf', count: 1 }, { type: 'goblin', count: 1 }]
+    },
+    spider: {
+      name: 'Araña de la fosa', hp: 180, speed: 1.9, armor: 1, gold: 24, leak: 1, radius: 16,
+      color: '#4a3a52', modelScale: 1.7,
+      onDeath: [{ type: 'spiderling', count: 3 }]
+    },
+    spiderling: {
+      name: 'Cría de araña', hp: 40, speed: 2.9, armor: 0, gold: 5, leak: 1, radius: 11,
+      color: '#6a5a72', modelScale: 1.5
+    },
+    wraith: {
+      name: 'Espectro', hp: 260, speed: 1.7, armor: 0, gold: 32, leak: 2, radius: 16,
+      color: '#7fb0c8', modelScale: 1.8,
+      physicalResist: 0.7
+    },
+    flameborn: {
+      name: 'Nacido del fuego', hp: 380, speed: 1.5, armor: 4, gold: 40, leak: 2, radius: 17,
+      color: '#e07a2c', modelScale: 1.8,
+      burnImmune: true, poisonImmune: true, magicResist: 0.15
+    },
+    golem: {
+      name: 'Golem de piedra', hp: 900, speed: 0.8, armor: 18, gold: 60, leak: 3, radius: 22,
+      color: '#8a8880', modelScale: 1.6,
+      slowImmune: true, magicResist: 0.2
+    },
+    bonetitan: {
+      name: 'Titán de hueso', hp: 6000, speed: 0.9, armor: 14, gold: 400, leak: 8, radius: 30,
+      boss: true, color: '#d8cdb2', modelScale: 1.35,
+      shield: 3000, slowImmune: true
+    },
+    hordequeen: {
+      name: 'Reina de la horda', hp: 5200, speed: 1.1, armor: 8, gold: 380, leak: 8, radius: 28,
+      boss: true, color: '#a8437e', modelScale: 1.3,
+      spawner: { type: 'goblin', every: 2.6, count: 2 }
+    },
     warlord: {
       name: 'Señor de la Guerra', hp: 2800, speed: 0.95, armor: 8, gold: 280, leak: 6,
       radius: 28, boss: true, color: '#b23a2c', modelScale: 1.55
@@ -71,6 +124,14 @@
     this.poisonTimer = 0;
     this.flash = 0;
     this.healTimer = type.heal ? type.heal.every : 0;
+    this.spawnTimer = type.spawner ? type.spawner.every : 0;
+    this.hpMul = mul;
+    this.speedMul = speedMul || 1;
+    this.shield = type.shield ? Math.round(type.shield * mul) : 0;
+    this.maxShield = this.shield;
+    this.shieldIdle = 0;
+    this.auraArmor = 0;     // reducción de daño que le regalan sus aliados
+    this.auraHaste = 0;
     this.dead = false;
     this.leaked = false;
     var p = this.path.at(0);
@@ -85,7 +146,7 @@
   };
 
   Enemy.prototype.speed = function () {
-    return this.baseSpeed * (1 - this.slow);
+    return this.baseSpeed * (1 - this.slow) * (1 + this.auraHaste);
   };
 
   Enemy.prototype.update = function (dt, game) {
@@ -121,6 +182,27 @@
     this.y = p.y;
     this.angle = p.angle;
 
+    /* El escudo vuelve a cerrarse si nadie lo toca durante unos segundos. */
+    if (this.maxShield && this.shield < this.maxShield) {
+      this.shieldIdle += dt;
+      if (this.shieldIdle > 4) {
+        this.shield = Math.min(this.maxShield, this.shield + this.maxShield * 0.12 * dt);
+      }
+    }
+
+    /* La reina va soltando camada sin dejar de avanzar. */
+    if (this.type.spawner) {
+      this.spawnTimer -= dt;
+      if (this.spawnTimer <= 0) {
+        this.spawnTimer = this.type.spawner.every;
+        for (var k = 0; k < this.type.spawner.count; k++) {
+          game.spawnEnemy(this.type.spawner.type, this,
+            Math.max(0, this.dist - 20 - k * 14));
+        }
+        game.effects.ring(this.x, this.y, 70, 'rgba(220,120,190,.8)', 0.2);
+      }
+    }
+
     /* El nigromante restaura la vida de sus aliados cercanos. */
     if (this.type.heal) {
       this.healTimer -= dt;
@@ -139,11 +221,42 @@
     }
   };
 
+  /* Reparte el efecto de escuderos y tamborileros entre los suyos. */
+  Enemy.prototype.applyAura = function (enemies) {
+    var aura = this.type.aura;
+    var r2 = aura.radius * aura.radius;
+    for (var i = 0; i < enemies.length; i++) {
+      var o = enemies[i];
+      if (o === this || o.dead || o.leaked) continue;
+      if (TD.dist2(this.x, this.y, o.x, o.y) > r2) continue;
+      if (aura.kind === 'armor') o.auraArmor = Math.max(o.auraArmor, aura.value);
+      else o.auraHaste = Math.max(o.auraHaste, aura.value);
+    }
+  };
+
   /* kind: 'physical' (lo reduce la armadura) o 'magic' (la ignora). */
   Enemy.prototype.damage = function (amount, kind, game, silent) {
     if (this.dead) return 0;
+    var type = this.type;
     var dmg = amount;
-    if (kind !== 'magic') dmg = Math.max(1, amount - this.type.armor);
+    if (kind === 'magic') {
+      if (type.magicResist) dmg *= (1 - type.magicResist);
+    } else {
+      dmg = Math.max(1, amount - type.armor);
+      if (type.physicalResist) dmg *= (1 - type.physicalResist);
+    }
+    if (this.auraArmor) dmg *= (1 - this.auraArmor);
+
+    /* El escudo se come el golpe antes que la carne. */
+    if (this.shield > 0) {
+      var absorbed = Math.min(this.shield, dmg);
+      this.shield -= absorbed;
+      dmg -= absorbed;
+      this.shieldIdle = 0;
+      if (!silent) this.flash = 0.1;
+      if (dmg <= 0) return absorbed;
+    }
+    this.shieldIdle = 0;
     this.hp -= dmg;
     if (!silent) this.flash = 0.1;
     if (this.hp <= 0) {
@@ -154,6 +267,7 @@
   };
 
   Enemy.prototype.applySlow = function (factor, duration) {
+    if (this.type.slowImmune) return;
     if (factor >= this.slow) {
       this.slow = factor;
       this.slowTimer = Math.max(this.slowTimer, duration);
@@ -163,11 +277,13 @@
   };
 
   Enemy.prototype.applyPoison = function (dps, duration) {
+    if (this.type.poisonImmune) return;
     this.poisonDps = Math.max(this.poisonDps, dps);
     this.poisonTimer = Math.max(this.poisonTimer, duration);
   };
 
   Enemy.prototype.applyBurn = function (dps, duration) {
+    if (this.type.burnImmune) return;
     this.burnDps = Math.max(this.burnDps, dps);
     this.burnTimer = Math.max(this.burnTimer, duration);
   };

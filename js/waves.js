@@ -23,15 +23,15 @@
     [g('knight', 6, 1.2), g('wolf', 8, 0.4, 6)],
     [g('orc', 10, 0.8), g('wolf', 10, 0.35, 5)],
     [g('warlord', 1, 1), g('goblin', 10, 0.5, 3), g('orc', 4, 1, 12)],
-    [g('wyvern', 10, 0.8), g('orc', 8, 0.8, 4)],
-    [g('knight', 8, 0.9), g('necromancer', 1, 1, 6), g('wolf', 8, 0.35, 9)],
+    [g('wyvern', 10, 0.8), g('bat', 8, 0.35, 5), g('orc', 6, 0.8, 9)],
+    [g('knight', 8, 0.9), g('drummer', 2, 2, 4), g('necromancer', 1, 1, 8), g('wolf', 8, 0.35, 10)],
     [g('ogre', 3, 2.4), g('goblin', 12, 0.4, 2), g('wyvern', 4, 1, 10)],
-    [g('wolf', 14, 0.3), g('wyvern', 8, 0.7, 5)],
-    [g('knight', 10, 0.8), g('necromancer', 2, 2.5, 5)],
-    [g('ogre', 4, 2.2), g('orc', 10, 0.7, 3), g('wyvern', 5, 1, 12)],
-    [g('wyvern', 14, 0.6), g('necromancer', 3, 2, 6)],
-    [g('knight', 12, 0.7), g('ogre', 4, 2.2, 6)],
-    [g('orc', 20, 0.45), g('wolf', 12, 0.3, 6), g('necromancer', 2, 2, 10)],
+    [g('wolfrider', 6, 0.9), g('wolf', 10, 0.3, 4), g('wyvern', 6, 0.7, 8)],
+    [g('knight', 8, 0.8), g('shieldbearer', 3, 1.8, 3), g('necromancer', 2, 2.5, 7)],
+    [g('spider', 6, 0.9), g('ogre', 3, 2.2, 3), g('orc', 8, 0.7, 6), g('wyvern', 5, 1, 12)],
+    [g('wraith', 5, 1.2), g('wyvern', 10, 0.6, 4), g('bat', 10, 0.3, 8), g('necromancer', 2, 2, 10)],
+    [g('golem', 3, 2.6), g('knight', 10, 0.7, 4), g('ogre', 3, 2.2, 9)],
+    [g('flameborn', 5, 1.2), g('orc', 16, 0.45, 4), g('wolfrider', 6, 0.7, 8), g('necromancer', 2, 2, 12)],
     [g('dragon', 1, 1), g('wyvern', 10, 0.7, 4), g('ogre', 2, 2.5, 10), g('knight', 8, 0.7, 16)]
   ];
 
@@ -42,9 +42,20 @@
     { type: 'orc', from: 4, weight: 3, gap: 0.5 },
     { type: 'wyvern', from: 7, weight: 2, gap: 0.55 },
     { type: 'knight', from: 8, weight: 2.5, gap: 0.6 },
+    { type: 'bat', from: 9, weight: 2, gap: 0.32 },
+    { type: 'drummer', from: 10, weight: 0.8, gap: 2.2 },
+    { type: 'shieldbearer', from: 11, weight: 1.0, gap: 1.6 },
     { type: 'necromancer', from: 12, weight: 0.7, gap: 2.0 },
-    { type: 'ogre', from: 13, weight: 1.2, gap: 1.8 }
+    { type: 'wolfrider', from: 12, weight: 1.6, gap: 0.7 },
+    { type: 'spider', from: 13, weight: 1.4, gap: 0.9 },
+    { type: 'ogre', from: 13, weight: 1.2, gap: 1.8 },
+    { type: 'wraith', from: 15, weight: 1.2, gap: 1.0 },
+    { type: 'golem', from: 17, weight: 0.9, gap: 2.4 },
+    { type: 'flameborn', from: 19, weight: 1.1, gap: 1.2 }
   ];
+
+  /* Los jefes se turnan; cada uno obliga a una defensa distinta. */
+  var BOSSES = ['warlord', 'bonetitan', 'dragon', 'hordequeen'];
 
   TD.TOTAL_WAVES = WAVES.length;
 
@@ -86,7 +97,7 @@
     /* Un jefe cada cinco oleadas, y más de uno cuando la cosa se pone seria. */
     if (n % 5 === 0) {
       var bosses = 1 + Math.floor((n - 20) / 25);
-      groups.unshift(g(n % 10 === 0 ? 'dragon' : 'warlord', bosses, 3.5, 1));
+      groups.unshift(g(BOSSES[Math.floor(n / 5) % BOSSES.length], bosses, 3.5, 1));
     }
     return groups;
   }

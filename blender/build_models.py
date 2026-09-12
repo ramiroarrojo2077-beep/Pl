@@ -217,15 +217,23 @@ def humanoid(parent, m, scale=1.0, skin='skin_goblin', cloth='cloth_brown',
     legR = group(parent.name + '__legR', parent, (0.07 * s, 0, 0.2 * s))
     box(legL, m[cloth], (0.075 * s, 0.08 * s, 0.2 * s), (0, 0, -0.1 * s))
     box(legR, m[cloth], (0.075 * s, 0.08 * s, 0.2 * s), (0, 0, -0.1 * s))
+    # pies
+    box(legL, m['leather'], (0.085 * s, 0.13 * s, 0.05 * s), (0, -0.02 * s, -0.19 * s))
+    box(legR, m['leather'], (0.085 * s, 0.13 * s, 0.05 * s), (0, -0.02 * s, -0.19 * s))
 
     torso = m[armor] if armor else m[cloth]
     box(body, torso, (0.26 * s, 0.19 * s, 0.24 * s), (0, 0, 0.12 * s))
     if armor:
         box(body, m[armor], (0.30 * s, 0.22 * s, 0.07 * s), (0, 0, 0.21 * s))
-    # brazos
+    # brazos, con hombro y mano
     for sx in (-1, 1):
         box(body, m[skin], (0.07 * s, 0.07 * s, 0.2 * s),
             (sx * 0.16 * s, 0, 0.12 * s), (0, sx * 0.12, 0))
+        ball(body, m[armor] if armor else m[cloth], 0.055 * s,
+             (sx * 0.155 * s, 0, 0.2 * s), seg=8, ring=5)
+        ball(body, m[skin], 0.045 * s, (sx * 0.185 * s, 0, 0.03 * s), seg=8, ring=5)
+    # cuello
+    cyl(body, m[skin], 0.045 * s, 0.06 * s, (0, 0, 0.25 * s), verts=8)
     # cabeza
     head_z = 0.32 * s
     ball(body, m[skin], 0.1 * s, (0, 0, head_z), (1, 0.92, 1))
@@ -316,16 +324,16 @@ def build_body(g, kind, body, trim, accent, t, tier):
     """Cuerpo del edificio; devuelve la altura de su coronación."""
     if kind == 'round':
         h = 0.5 + t * 0.75
-        cyl(g, body, 0.25 + t * 0.05, h, (0, 0, 0.16 + h / 2), verts=12)
-        cyl(g, trim, 0.28 + t * 0.05, 0.06, (0, 0, 0.16 + h), verts=12)
+        cyl(g, body, 0.25 + t * 0.05, h, (0, 0, 0.16 + h / 2), verts=16)
+        cyl(g, trim, 0.28 + t * 0.05, 0.06, (0, 0, 0.16 + h), verts=16)
         crenellations(g, body, 0.25 + t * 0.05, 0.22 + h, 8)
         return 0.2 + h
 
     if kind == 'tall':
         h = 0.85 + t * 0.95
-        cyl(g, body, 0.2 + t * 0.03, h, (0, 0, 0.16 + h / 2), verts=10)
+        cyl(g, body, 0.2 + t * 0.03, h, (0, 0, 0.16 + h / 2), verts=14)
         for i in range(1 + int(t * 3)):
-            cyl(g, trim, 0.23 + t * 0.03, 0.05, (0, 0, 0.3 + i * (h / (2 + t * 3))), verts=10)
+            cyl(g, trim, 0.23 + t * 0.03, 0.05, (0, 0, 0.3 + i * (h / (2 + t * 3))), verts=14)
         return 0.16 + h
 
     if kind == 'square':
@@ -373,7 +381,7 @@ def build_body(g, kind, body, trim, accent, t, tier):
 
     if kind == 'hut':
         h = 0.36 + t * 0.4
-        cyl(g, body, 0.3 + t * 0.04, h, (0, 0, 0.16 + h / 2), verts=9)
+        cyl(g, body, 0.3 + t * 0.04, h, (0, 0, 0.16 + h / 2), verts=14)
         box(g, trim, (0.16, 0.04, 0.22), (0, -0.3, 0.28))
         return 0.16 + h
 
@@ -412,10 +420,10 @@ def build_body(g, kind, body, trim, accent, t, tier):
 
 def build_roof(g, kind, roof, accent, top, t):
     if kind == 'cone':
-        cone(g, roof, 0.34 + t * 0.06, 0.0, 0.3 + t * 0.22, (0, 0, top + 0.18 + t * 0.1), verts=12)
+        cone(g, roof, 0.34 + t * 0.06, 0.0, 0.3 + t * 0.22, (0, 0, top + 0.18 + t * 0.1), verts=16)
         return top + 0.1
     if kind == 'spire':
-        cone(g, roof, 0.3 + t * 0.05, 0.0, 0.5 + t * 0.5, (0, 0, top + 0.28 + t * 0.24), verts=10)
+        cone(g, roof, 0.3 + t * 0.05, 0.0, 0.5 + t * 0.5, (0, 0, top + 0.28 + t * 0.24), verts=14)
         ball(g, accent, 0.06 + t * 0.03, (0, 0, top + 0.56 + t * 0.75))
         return top + 0.06
     if kind == 'dome':
@@ -622,6 +630,133 @@ def build_enemies(m):
             box(wing, m['purple'], (0.44, 0.04, 0.035), (sx * 0.23, -0.1, 0.01),
                 (0, 0, sx * 0.25))
 
+    with asset('enemy_bat') as g:
+        body = group(g.name + '__body', g, (0, 0, 0.26))
+        ball(body, m['purple'], 0.1, (0, 0, 0), (1, 1.3, 0.9))
+        ball(body, m['purple'], 0.07, (0, -0.12, 0.04))
+        for sx in (-1, 1):
+            cone(body, m['purple'], 0.03, 0.0, 0.12, (sx * 0.05, -0.1, 0.12))
+            ball(body, m['fire_core'], 0.016, (sx * 0.035, -0.17, 0.05), seg=6, ring=4)
+            wing = group('%s__wing%s' % (g.name, 'L' if sx < 0 else 'R'), body, (sx * 0.07, 0, 0.03))
+            box(wing, m['purple_light'], (0.3, 0.22, 0.015), (sx * 0.16, 0, 0), (0, 0, sx * 0.2))
+            box(wing, m['purple'], (0.32, 0.03, 0.03), (sx * 0.17, -0.08, 0.005), (0, 0, sx * 0.2))
+
+    with asset('enemy_drummer') as g:
+        body, _, _ = humanoid(g, m, 1.05, 'skin_orc', 'cloth_red', ears=True)
+        cyl(body, m['wood'], 0.16, 0.18, (0, -0.16, 0.14), (math.pi / 2, 0, 0), verts=10)
+        cyl(body, m['canvas_tent'], 0.155, 0.02, (0, -0.25, 0.14), (math.pi / 2, 0, 0), verts=10)
+        for sx in (-1, 1):
+            box(body, m['wood_dark'], (0.02, 0.02, 0.2), (sx * 0.2, -0.12, 0.26), (0.6, 0, 0))
+
+    with asset('enemy_shieldbearer') as g:
+        body, _, _ = humanoid(g, m, 1.25, 'skin_orc', 'leather', armor='iron', ears=True)
+        box(body, m['metal'], (0.05, 0.34, 0.52), (-0.26, -0.04, 0.24))
+        box(body, m['gold'], (0.02, 0.1, 0.36), (-0.29, -0.04, 0.24))
+        ball(body, m['gold'], 0.06, (-0.3, -0.04, 0.24))
+        weapon_sword(body, m, 1.25)
+
+    with asset('enemy_wolfrider') as g:
+        body = group(g.name + '__body', g, (0, 0, 0.26))
+        ball(body, m['fur_dark'], 0.18, (0, 0.02, 0), (1.0, 1.7, 0.95))
+        ball(body, m['fur_dark'], 0.11, (0, -0.28, 0.06))
+        cone(body, m['fur'], 0.06, 0.0, 0.14, (0, -0.38, 0.02), (math.pi / 2.1, 0, 0))
+        for sx in (-1, 1):
+            cone(body, m['fur'], 0.04, 0.0, 0.1, (sx * 0.06, -0.24, 0.15))
+            ball(body, m['fire'], 0.02, (sx * 0.05, -0.35, 0.07), seg=6, ring=4)
+        cone(body, m['fur'], 0.05, 0.0, 0.26, (0, 0.32, 0.08), (-1.1, 0, 0))
+        # jinete
+        box(body, m['cloth_brown'], (0.18, 0.14, 0.2), (0, 0.04, 0.22))
+        ball(body, m['skin_goblin'], 0.085, (0, 0.02, 0.38))
+        for sx in (-1, 1):
+            cone(body, m['skin_goblin'], 0.04, 0.0, 0.13, (sx * 0.09, 0.02, 0.4), (0, sx * 1.2, 0))
+        box(body, m['wood_dark'], (0.03, 0.03, 0.3), (0.13, 0.0, 0.36), (0.4, 0, 0))
+        for i, (sx, sy) in enumerate([(-1, 1), (1, 1), (-1, -1), (1, -1)]):
+            leg = group('%s__leg%s' % (g.name, 'ABCD'[i]), g, (sx * 0.11, sy * 0.15, 0.22))
+            box(leg, m['fur_dark'], (0.06, 0.06, 0.22), (0, 0, -0.11))
+
+    def spider(g, scale, body_mat, eye_mat):
+        s = scale
+        body = group(g.name + '__body', g, (0, 0, 0.16 * s))
+        ball(body, body_mat, 0.17 * s, (0, 0.1 * s, 0), (1, 1.25, 0.85))
+        ball(body, body_mat, 0.11 * s, (0, -0.16 * s, 0.02 * s))
+        for sx in (-1, 1):
+            ball(body, eye_mat, 0.022 * s, (sx * 0.045 * s, -0.24 * s, 0.05 * s), seg=6, ring=4)
+            ball(body, eye_mat, 0.014 * s, (sx * 0.085 * s, -0.2 * s, 0.06 * s), seg=6, ring=4)
+        for i in range(8):
+            side = -1 if i < 4 else 1
+            k = i % 4
+            name = 'ABCD'[k] if i < 4 else None
+            parent = group('%s__leg%s' % (g.name, name), g, (side * 0.12 * s, (0.14 - k * 0.1) * s, 0.16 * s)) if name else body
+            a = side * (0.5 + k * 0.12)
+            box(parent, body_mat, (0.035 * s, 0.035 * s, 0.3 * s),
+                (side * 0.1 * s, 0, -0.04 * s) if name else (side * 0.22 * s, (0.14 - k * 0.1) * s, -0.02 * s),
+                (0, side * 0.9, a * 0.2))
+        return body
+
+    with asset('enemy_spider') as g:
+        spider(g, 1.0, m['necro'], m['fire_core'])
+
+    with asset('enemy_spiderling') as g:
+        spider(g, 0.6, m['purple'], m['fire_core'])
+
+    with asset('enemy_wraith') as g:
+        body = group(g.name + '__body', g, (0, 0, 0.1))
+        cone(body, m['storm'], 0.24, 0.05, 0.6, (0, 0, 0.3), verts=10)
+        ball(body, m['storm'], 0.13, (0, 0, 0.58), (1, 1, 0.85))
+        cone(body, m['storm'], 0.15, 0.0, 0.18, (0, 0, 0.66), verts=8)
+        for sx in (-1, 1):
+            ball(body, m['storm_glow'], 0.028, (sx * 0.05, -0.11, 0.58), seg=6, ring=4)
+            box(body, m['storm_glow'], (0.03, 0.03, 0.26), (sx * 0.22, -0.02, 0.34), (0, sx * 0.4, 0))
+        ball(body, m['storm_glow'], 0.06, (0, -0.06, 0.2), (1.6, 1, 1.6))
+
+    with asset('enemy_flameborn') as g:
+        body = group(g.name + '__body', g, (0, 0, 0.12))
+        cone(body, m['fire'], 0.24, 0.08, 0.56, (0, 0, 0.28), verts=9)
+        cone(body, m['fire_core'], 0.14, 0.0, 0.36, (0, 0, 0.24), verts=8)
+        ball(body, m['fire_core'], 0.12, (0, 0, 0.58))
+        for i in range(5):
+            a = TAU * i / 5
+            cone(body, m['fire'], 0.05, 0.0, 0.22,
+                 (0.13 * math.cos(a), 0.13 * math.sin(a), 0.74))
+        for sx in (-1, 1):
+            cone(body, m['fire'], 0.07, 0.0, 0.3, (sx * 0.24, 0, 0.34), (0, sx * 0.5, 0))
+
+    with asset('enemy_golem') as g:
+        body = group(g.name + '__body', g, (0, 0, 0.3))
+        box(body, m['crag'], (0.44, 0.34, 0.42), (0, 0, 0.12))
+        box(body, m['crag_dark'], (0.5, 0.38, 0.12), (0, 0, 0.3))
+        ball(body, m['crag'], 0.14, (0, -0.02, 0.46), (1.1, 1, 0.9))
+        for sx in (-1, 1):
+            ball(body, m['fire_core'], 0.028, (sx * 0.06, -0.12, 0.47), seg=6, ring=4)
+            box(body, m['crag'], (0.16, 0.16, 0.34), (sx * 0.3, 0, 0.14), (0, sx * 0.18, 0))
+            ball(body, m['crag_dark'], 0.11, (sx * 0.33, 0, -0.02))
+            rock_shape(body, m['moss'], 0.06, (sx * 0.16, -0.16, 0.3), (1.4, 1.2, 0.4))
+        for i, sx in enumerate((-1, 1)):
+            leg = group('%s__leg%s' % (g.name, 'LR'[i]), g, (sx * 0.13, 0, 0.3))
+            box(leg, m['crag'], (0.2, 0.2, 0.32), (0, 0, -0.16))
+
+    with asset('enemy_bonetitan') as g:
+        body, _, _ = humanoid(g, m, 2.4, 'bone', 'dark', horns=True)
+        for i in range(4):
+            box(body, m['bone'], (0.5, 0.06, 0.08), (0, -0.06, 0.18 + i * 0.13))
+        box(body, m['bone'], (0.08, 0.08, 0.6), (0, 0, 0.3))
+        for sx in (-1, 1):
+            cone(body, m['bone'], 0.1, 0.0, 0.42, (sx * 0.42, 0, 0.5), (0, sx * 0.4, 0))
+        ball(body, m['necro_glow'], 0.05, (0, -0.12, 0.78), seg=8, ring=5)
+
+    with asset('enemy_hordequeen') as g:
+        body, _, _ = humanoid(g, m, 2.0, 'skin_pale', 'purple', armor='necro')
+        cone(body, m['gold'], 0.16, 0.2, 0.14, (0, 0, 0.78), verts=8)
+        for i in range(5):
+            a = TAU * i / 5
+            cone(body, m['gold'], 0.03, 0.0, 0.12,
+                 (0.17 * math.cos(a), 0.17 * math.sin(a), 0.86))
+        box(body, m['purple'], (0.04, 0.46, 0.66), (0, 0.2, 0.3))
+        for i, (x, y, z) in enumerate([(0.22, 0.26, 0.12), (-0.24, 0.24, 0.16), (0.05, 0.3, 0.3)]):
+            ball(body, m['venom_glow'], 0.07, (x, y, z))
+        box(body, m['wood_dark'], (0.035, 0.035, 0.9), (0.3, 0.04, 0.42))
+        ball(body, m['venom_glow'], 0.09, (0.3, 0.04, 0.92))
+
     with asset('enemy_dragon') as g:
         body = group(g.name + '__body', g, (0, 0, 0.42))
         ball(body, m['dragon'], 0.3, (0, 0, 0), (1, 1.7, 0.9))
@@ -825,6 +960,8 @@ def optimize_meshes():
     bpy.context.view_layer.objects.active = meshes[0]
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
+    _bevel_prefixes = ('b_', 'enemy_', 'proj_', 'prop_castle', 'prop_gate')
+
     for parent in [o for o in bpy.data.objects if o.type == 'EMPTY']:
         buckets = {}
         for o in parent.children:
@@ -841,6 +978,33 @@ def optimize_meshes():
             bpy.context.view_layer.objects.active = objs[0]
             bpy.ops.object.join()
     bpy.ops.object.select_all(action='DESELECT')
+
+    # Bisel fino y normales suaves por ángulo: las aristas recogen luz y las
+    # superficies curvas dejan de verse facetadas. Solo en lo que se mira de
+    # cerca; el paisaje de fondo se queda plano y barato.
+    for o in [x for x in bpy.data.objects if x.type == 'MESH']:
+        root = o
+        while root.parent:
+            root = root.parent
+        if not root.name.startswith(_bevel_prefixes):
+            continue
+        bpy.context.view_layer.objects.active = o
+        mod = o.modifiers.new('bisel', 'BEVEL')
+        mod.width = 0.012
+        mod.segments = 1
+        mod.limit_method = 'ANGLE'
+        mod.angle_limit = math.radians(35)
+        mod.miter_outer = 'MITER_ARC'
+        try:
+            bpy.ops.object.modifier_apply(modifier=mod.name)
+        except RuntimeError:
+            o.modifiers.remove(mod)
+        o.data.use_auto_smooth = True
+        o.data.auto_smooth_angle = math.radians(38)
+        bpy.ops.object.select_all(action='DESELECT')
+        o.select_set(True)
+        bpy.ops.object.shade_smooth()
+        bpy.ops.object.select_all(action='DESELECT')
 
 
 def render_preview(path):
